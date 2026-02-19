@@ -145,7 +145,7 @@ async function exportPDF() {
 
     const pageTopCm = p * pageHeightCm;
 
-    layer.children.forEach(node => {
+    for (let node of layer.children) {
 
       const realX = node.x() / SCALE / 100;
       const realY = node.y() / SCALE / 100;
@@ -154,20 +154,27 @@ async function exportPDF() {
 
       if (realY + realH > pageTopCm && realY < pageTopCm + pageHeightCm) {
 
-        doc.rect(
+        const imgData = node.image().src;
+
+        doc.addImage(
+          imgData,
+          "JPEG",
           realX,
           realY - pageTopCm,
           realW,
           realH
         );
       }
-    });
+    }
   }
 
-  doc.save("auto-layout.pdf");
+  // เปิด Preview ก่อน
+  window.open(doc.output("bloburl"));
+
+  // ถ้าต้องการให้ดาวน์โหลดด้วย ให้เปิดบรรทัดนี้
+  // doc.save("auto-layout.pdf");
 }
 
-}
 </script>
 
 </body>
