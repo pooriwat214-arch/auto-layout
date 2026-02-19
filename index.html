@@ -16,36 +16,25 @@ body{
   display:flex;
   flex-direction:column;
   height:100vh;
-  color:#2c3e50;
 }
-
-/* ===== Top Bar ===== */
 .topbar{
   background:#0b1d3a;
   color:white;
   padding:14px 24px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  font-size:14px;
-  letter-spacing:.5px;
 }
-
 .status-badge{
   background:#1abc9c;
   padding:4px 10px;
   border-radius:20px;
   font-size:12px;
 }
-
-/* ===== Layout ===== */
 .main{
   flex:1;
   display:flex;
   overflow:hidden;
 }
-
-/* ===== Sidebar ===== */
 #controls{
   width:340px;
   background:white;
@@ -53,86 +42,44 @@ body{
   padding:24px;
   overflow-y:auto;
 }
-
-.panel-title{
-  font-size:13px;
-  font-weight:600;
-  margin-bottom:10px;
-  text-transform:uppercase;
-  color:#7f8c8d;
-}
-
 input{
   width:100%;
-  padding:8px 10px;
+  padding:8px;
   margin-bottom:12px;
-  border:1px solid #dcdfe6;
-  border-radius:4px;
-  font-size:13px;
 }
-
 button{
   width:100%;
   padding:10px;
   margin-bottom:8px;
   border:none;
   border-radius:4px;
-  font-size:13px;
   cursor:pointer;
-  transition:.2s;
 }
-
-/* Primary */
-.btn-primary{
-  background:#1f3c88;
-  color:white;
-}
-.btn-primary:hover{
-  background:#162d66;
-}
-
-/* Secondary */
-.btn-secondary{
-  background:#ecf0f1;
-}
-.btn-secondary:hover{
-  background:#dfe6e9;
-}
-
-/* ===== Workspace ===== */
+.btn-primary{background:#1f3c88;color:white;}
+.btn-secondary{background:#ecf0f1;}
 #workspace{
   flex:1;
   padding:24px;
   overflow:auto;
 }
-
 .canvas-wrapper{
   background:white;
   padding:20px;
   border-radius:6px;
   box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
-
-/* Footer info */
 .footer-info{
-  margin-top:20px;
   font-size:12px;
-  color:#7f8c8d;
-  line-height:1.6;
+  margin-top:15px;
 }
 </style>
-
 </head>
 
 <body>
 
 <div class="topbar">
-  <div>
-    <strong>AUTO LAYOUT</strong> – Production System
-  </div>
-  <div class="status-badge" id="systemStatus">
-    READY
-  </div>
+  <div><strong>AUTO LAYOUT</strong> – Production System</div>
+  <div class="status-badge" id="systemStatus">READY</div>
 </div>
 
 <div class="main">
@@ -151,14 +98,13 @@ button{
 <label>Upload Images</label>
 <input type="file" id="upload" multiple>
 
-<button onclick="autoLayout()">Smart Auto Layout</button>
-<button onclick="exportPDF()">Export Production PDF</button>
+<button class="btn-primary" onclick="autoLayout()">Smart Auto Layout</button>
+<button class="btn-primary" onclick="exportPDF()">Export Production PDF</button>
+<button class="btn-secondary" onclick="initStage()">Reset Project</button>
 
-<div style="margin-top:15px;font-weight:bold;">
-Used Area: <span id="usedArea">0%</span>
-</div>
-
-<div>
+<div class="footer-info">
+Images: <span id="imageCount">0</span><br>
+Used Area: <span id="usedArea">0%</span><br>
 Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 </div>
 
@@ -171,56 +117,20 @@ Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 </div>
 
 </div>
-<div class="panel-title">Project Settings</div>
-
-<label>Carpet Width (m)</label>
-<input type="number" id="width" value="4">
-
-<label>Carpet Length (m)</label>
-<input type="number" id="length" value="40">
-
-<label>Gap (cm)</label>
-<input type="number" id="gap" value="10">
-
-<div class="panel-title">Images</div>
-
-<input type="file" id="upload" multiple>
-
-<button class="btn-primary" onclick="autoLayout()">
-Smart Auto Layout
-</button>
-
-<button class="btn-primary" onclick="exportPDF()">
-Export Production PDF
-</button>
-
-<button class="btn-secondary" onclick="initStage()">
-Reset Project
-</button>
-
-<div class="footer-info">
-Images: <span id="imageCount">0</span><br>
-Used Area: <span id="usedArea">0%</span><br>
-Carpet Size: <span id="carpetSize">0 x 0 cm</span>
-</div>
 
 <script>
-function updateImageCount(){
-  const count = layer.children.filter(n=>n.className==="Image").length;
-  document.getElementById("imageCount").innerText = count;
-}
 const SCALE = 0.1;
 let stage, layer;
 
 function initStage(){
 
-  const widthCm = document.getElementById('width').value*100;
-  const lengthCm = document.getElementById('length').value*100;
+  const widthCm = width.value * 100;
+  const lengthCm = length.value * 100;
 
   const widthPx = widthCm * SCALE;
   const heightPx = lengthCm * SCALE;
 
-  document.getElementById("container").innerHTML="";
+  container.innerHTML="";
 
   stage = new Konva.Stage({
     container:'container',
@@ -231,168 +141,85 @@ function initStage(){
   layer = new Konva.Layer();
   stage.add(layer);
 
-  const carpet = new Konva.Rect({
+  layer.add(new Konva.Rect({
     x:0,y:0,
     width:widthPx,
     height:heightPx,
-    fill:"#ffffff",
-    stroke:"#000",
+    stroke:"black",
     strokeWidth:2
-  });
+  }));
 
-  layer.add(carpet);
-  layer.draw();
   updateAreaUsage();
 }
 
 initStage();
-document.getElementById('width').onchange=initStage;
-document.getElementById('length').onchange=initStage;
+width.onchange = initStage;
+length.onchange = initStage;
 
-document.getElementById('upload').addEventListener('change', function(e){
+upload.addEventListener('change', function(e){
 
-  Array.from(e.target.files).forEach(file => {
+  Array.from(e.target.files).forEach(file=>{
 
-    const fileName = file.name.toLowerCase();
+    const reader=new FileReader();
 
-    if(fileName.endsWith(".tif") || fileName.endsWith(".tiff")){
+    reader.onload=function(evt){
 
-      const reader = new FileReader();
+      const imgObj=new Image();
 
-      reader.onload = function(event){
+      imgObj.onload=function(){
 
-        const buffer = event.target.result;
-        const ifds = UTIF.decode(buffer);
-        UTIF.decodeImages(buffer, ifds);
+        const img=new Konva.Image({
+          image:imgObj,
+          x:0,y:0,
+          width:200,height:200,
+          draggable:true,
+          dragBoundFunc:function(pos){
+            return{
+              x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
+              y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
+            };
+          }
+        });
 
-        const firstPage = ifds[0];
-        const rgba = UTIF.toRGBA8(firstPage);
-
-        const canvas = document.createElement("canvas");
-        canvas.width = firstPage.width;
-        canvas.height = firstPage.height;
-
-        const ctx = canvas.getContext("2d");
-        const imageData = ctx.createImageData(firstPage.width, firstPage.height);
-        imageData.data.set(rgba);
-        ctx.putImageData(imageData, 0, 0);
-
-        const imgObj = new Image();
-        imgObj.onload = function(){
-
-          const img = new Konva.Image({
-            image: imgObj,
-            x:0,
-            y:0,
-            width:200,
-            height:200,
-            draggable:true,
-            dragBoundFunc:function(pos){
-              return{
-                x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
-                y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
-              };
-            }
-          });
-
-          layer.add(img);
-          layer.draw();
-          updateAreaUsage();
-        };
-
-        imgObj.src = canvas.toDataURL("image/png");
-      };
-
-      reader.readAsArrayBuffer(file);
-
-    } else {
-
-      // JPG / PNG ปกติ
-      const reader = new FileReader();
-
-      reader.onload = function(evt){
-        const imgObj = new Image();
-        imgObj.onload = function(){
-
-          const img = new Konva.Image({
-            image: imgObj,
-            x:0,
-            y:0,
-            width:200,
-            height:200,
-            draggable:true,
-            dragBoundFunc:function(pos){
-              return{
-                x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
-                y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
-              };
-            }
-          });
-
-          layer.add(img);
-          layer.draw();
-          updateAreaUsage();
-        };
-
-        imgObj.src = evt.target.result;
-      };
-
-      reader.readAsDataURL(file);
-    }
-
-  });
-
-});
         layer.add(img);
         layer.draw();
         updateAreaUsage();
+        updateImageCount();
       };
+
       imgObj.src=evt.target.result;
     };
+
     reader.readAsDataURL(file);
   });
 });
 
+function updateImageCount(){
+  imageCount.innerText =
+    layer.children.filter(n=>n.className==="Image").length;
+}
+
 function autoLayout(){
 
-  const gap = document.getElementById('gap').value * SCALE;
+  const gap = gapInput = gap.value * SCALE;
 
-  const freeRects=[{
-    x:0,y:0,
-    width:stage.width(),
-    height:stage.height()
-  }];
+  let x=0,y=0,rowHeight=0;
 
-  const images=layer.children.filter(n=>n.className==="Image");
-
-  images.sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
+  const images=layer.children
+    .filter(n=>n.className==="Image")
+    .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
 
   images.forEach(img=>{
-    for(let i=0;i<freeRects.length;i++){
-      const r=freeRects[i];
-      if(img.width()+gap<=r.width && img.height()+gap<=r.height){
 
-        img.position({x:r.x,y:r.y});
-
-        freeRects.splice(i,1);
-
-        freeRects.push({
-          x:r.x+img.width()+gap,
-          y:r.y,
-          width:r.width-img.width()-gap,
-          height:img.height()+gap
-        });
-
-        freeRects.push({
-          x:r.x,
-          y:r.y+img.height()+gap,
-          width:r.width,
-          height:r.height-img.height()-gap
-        });
-
-        break;
-      }
+    if(x+img.width()>stage.width()){
+      x=0;
+      y+=rowHeight+gapInput;
+      rowHeight=0;
     }
+
+    img.position({x,y});
+    x+=img.width()+gapInput;
+    rowHeight=Math.max(rowHeight,img.height());
   });
 
   layer.draw();
@@ -401,102 +228,53 @@ function autoLayout(){
 
 function updateAreaUsage(){
 
-  const widthCm=document.getElementById('width').value*100;
-  const lengthCm=document.getElementById('length').value*100;
-  const carpetArea=widthCm*lengthCm;
+  const widthCm = width.value*100;
+  const lengthCm = length.value*100;
+  const carpetArea = widthCm*lengthCm;
 
   let used=0;
 
   layer.children.forEach(n=>{
     if(n.className==="Image"){
-      used+=(n.width()/SCALE/100)*(n.height()/SCALE/100);
+      const realW = n.width()/SCALE;
+      const realH = n.height()/SCALE;
+      used+=realW*realH;
     }
   });
 
-  document.getElementById("usedArea").innerText=
-  ((used/carpetArea)*100).toFixed(2)+"%";
-
-  document.getElementById("carpetSize").innerText=
-  widthCm+" x "+lengthCm+" cm";
+  usedArea.innerText=((used/carpetArea)*100).toFixed(2)+"%";
+  carpetSize.innerText=widthCm+" x "+lengthCm+" cm";
 }
 
 async function exportPDF(){
 
   const { jsPDF } = window.jspdf;
 
-  const widthCm=document.getElementById('width').value*100;
-  const lengthCm=document.getElementById('length').value*100;
-
-  const pageHeight=200;
-  const totalPages=Math.ceil(lengthCm/pageHeight);
+  const widthCm = width.value*100;
+  const lengthCm = length.value*100;
 
   const doc=new jsPDF({
     orientation:"portrait",
     unit:"cm",
-    format:[widthCm,pageHeight]
+    format:[widthCm,lengthCm]
   });
 
-  for(let p=0;p<totalPages;p++){
+  for(let node of layer.children){
 
-    if(p>0) doc.addPage([widthCm,pageHeight]);
+    if(node.className!=="Image") continue;
 
-    const pageTop=p*pageHeight;
-    const pageBottom=pageTop+pageHeight;
-
-    for(let node of layer.children){
-
-      if(node.className!=="Image") continue;
-
-      const realX=node.x()/SCALE/100;
-      const realY=node.y()/SCALE/100;
-      const realW=node.width()/SCALE/100;
-      const realH=node.height()/SCALE/100;
-
-      const imgTop=realY;
-      const imgBottom=realY+realH;
-
-      if(imgBottom>pageTop && imgTop<pageBottom){
-
-        const visibleTop=Math.max(imgTop,pageTop);
-        const visibleBottom=Math.min(imgBottom,pageBottom);
-        const visibleHeight=visibleBottom-visibleTop;
-
-        const cropStartPx=(visibleTop-imgTop)*100*SCALE;
-        const cropHeightPx=visibleHeight*100*SCALE;
-
-        const canvas=document.createElement("canvas");
-        canvas.width=node.width();
-        canvas.height=cropHeightPx;
-
-        const ctx=canvas.getContext("2d");
-
-        ctx.drawImage(
-          node.image(),
-          0,
-          cropStartPx,
-          node.width(),
-          cropHeightPx,
-          0,
-          0,
-          node.width(),
-          cropHeightPx
-        );
-
-        doc.addImage(
-          canvas.toDataURL("image/jpeg"),
-          "JPEG",
-          realX,
-          visibleTop-pageTop,
-          realW,
-          visibleHeight
-        );
-      }
-    }
+    doc.addImage(
+      node.image().src,
+      "JPEG",
+      node.x()/SCALE,
+      node.y()/SCALE,
+      node.width()/SCALE,
+      node.height()/SCALE
+    );
   }
 
   window.open(doc.output("bloburl"));
 }
-
 </script>
 </body>
 </html>
