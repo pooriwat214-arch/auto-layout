@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Auto Layout</title>
-  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
- <style>
+<meta charset="UTF-8" />
+<title>Auto Layout</title>
+
+<script src="https://unpkg.com/konva@9/konva.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
 body {
   margin: 0;
   font-family: "Segoe UI", Arial;
@@ -15,44 +17,31 @@ body {
   height: 100vh;
 }
 
-/* Top Bar */
 .topbar {
   background: #0f1f3d;
   color: white;
   padding: 15px 20px;
   font-size: 18px;
   font-weight: bold;
-  letter-spacing: 1px;
 }
 
-/* Main Layout */
 .main {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
 
-/* Sidebar */
 #controls {
   width: 320px;
   padding: 20px;
   background: white;
   border-right: 1px solid #dcdcdc;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-}
-
-#controls h3 {
-  margin-top: 0;
-  color: #0f1f3d;
 }
 
 input {
   width: 100%;
   padding: 8px;
-  margin-top: 5px;
   margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 button {
@@ -62,16 +51,9 @@ button {
   background: #1f3c88;
   color: white;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
-  font-weight: 500;
 }
 
-button:hover {
-  background: #162d66;
-}
-
-/* Workspace */
 #workspace {
   flex: 1;
   padding: 20px;
@@ -81,61 +63,69 @@ button:hover {
 .canvas-wrapper {
   background: white;
   padding: 20px;
-  border-radius: 6px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
   display: inline-block;
 }
-</style>
 
+.info {
+  margin-top: 15px;
+  font-size: 14px;
+}
+</style>
 </head>
+
 <body>
 
 <div class="topbar">
-  AUTO LAYOUT – Carpet Layout Management Tool
+AUTO LAYOUT – Carpet Layout Management Tool
 </div>
 
 <div class="main">
 
-  <div id="controls">
-    <h3>Project Settings</h3>
+<div id="controls">
 
-    <label>Carpet Width (m)</label>
-    <input type="number" id="width" value="4">
+<label>Carpet Width (m)</label>
+<input type="number" id="width" value="4">
 
-    <label>Carpet Length (m)</label>
-    <input type="number" id="length" value="40">
+<label>Carpet Length (m)</label>
+<input type="number" id="length" value="40">
 
-    <label>Gap (cm)</label>
-    <input type="number" id="gap" value="10">
+<label>Gap (cm)</label>
+<input type="number" id="gap" value="10">
 
-    <label>Upload Images</label>
-    <input type="file" id="upload" multiple>
+<label>Upload Images</label>
+<input type="file" id="upload" multiple>
 
-    <button onclick="autoLayout()">Auto Layout</button>
-    <button onclick="exportPDF()">Export PDF</button>
-  </div>
+<button onclick="autoLayout()">Auto Layout</button>
+<button onclick="exportPDF()">Export PDF</button>
 
-  <div id="workspace">
-    <div class="canvas-wrapper">
-      <div id="container"></div>
-    </div>
-  </div>
+<div class="info">
+Carpet Size: <span id="carpetSize"></span><br>
+Used Area: <span id="usedArea">0%</span>
+</div>
 
 </div>
 
+<div id="workspace">
+<div class="canvas-wrapper">
 <div id="container"></div>
+</div>
+</div>
+
+</div>
 
 <script>
 const SCALE = 0.1;
 let stage;
 let layer;
-let selectedNode = null;
+let transformer;
 
 function initStage() {
+
   const width = document.getElementById('width').value * 100 * SCALE;
   const height = document.getElementById('length').value * 100 * SCALE;
 
   document.getElementById('container').innerHTML = "";
+
   stage = new Konva.Stage({
     container: 'container',
     width: width,
@@ -144,19 +134,48 @@ function initStage() {
 
   layer = new Konva.Layer();
   stage.add(layer);
+
+  transformer = new Konva.Transformer();
+  layer.add(transformer);
+
+  stage.on("dragmove", snapLogic);
+
+  updateAreaUsage();
 }
+
+function snapLogic(e) {
+  const node = e.target;
+  const snapDistance = 10;
+
+  layer.children.forEach(other => {
+    if (other === node || other === transformer) return;
+
+    if (Math.abs(node.x() - other.x()) < snapDistance)
+      node.x(other.x());
+
+    if (Math.abs(node.y() - other.y()) < snapDistance)
+      node.y(other.y());
+
+    if (Math.abs(node.x() + node.width() - other.x()) < snapDistance)
+      node.x(other.x() - node.width());
+  });
+
+  layer.draw();
+  updateAreaUsage();
+}
+
 function updateAreaUsage() {
 
   const carpetWidthCm = document.getElementById('width').value * 100;
   const carpetLengthCm = document.getElementById('length').value * 100;
 
   const carpetArea = carpetWidthCm * carpetLengthCm;
-
   let usedArea = 0;
 
   layer.children.forEach(node => {
-    const realW = node.width() / SCALE / 100;
-    const realH = node.height() / SCALE / 100;
+    if (node === transformer) return;
+    const realW = node.width() / SCALE;
+    const realH = node.height() / SCALE;
     usedArea += realW * realH;
   });
 
@@ -166,79 +185,75 @@ function updateAreaUsage() {
   document.getElementById("carpetSize").innerText =
     carpetWidthCm + " x " + carpetLengthCm + " cm";
 }
-stage.on("dragmove", function(e) {
-
-  const node = e.target;
-  const snapDistance = 10;
-
-  layer.children.forEach(other => {
-    if (other === node) return;
-
-    if (Math.abs(node.x() - other.x()) < snapDistance) {
-      node.x(other.x());
-    }
-
-    if (Math.abs(node.y() - other.y()) < snapDistance) {
-      node.y(other.y());
-    }
-  });
-});
-
-initStage();
-
-document.getElementById('width').onchange = initStage;
-document.getElementById('length').onchange = initStage;
 
 document.getElementById('upload').addEventListener('change', function(e){
   Array.from(e.target.files).forEach(file => {
+
     const reader = new FileReader();
+
     reader.onload = function(evt){
       const imgObj = new Image();
-      imgObj.onload = function(){
-        const img = new Konva.Image({
-  image: imgObj,
-  x: 0,
-  y: 0,
-  width: 200,
-  height: 200,
-  draggable: true
-});
 
-img.on("click", () => {
-  selectedNode = img;
-});
+      imgObj.onload = function(){
+
+        const img = new Konva.Image({
+          image: imgObj,
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 200,
+          draggable: true
+        });
+
+        img.on("click", () => {
+          transformer.nodes([img]);
+          layer.draw();
+        });
+
+        img.on("transformend dragend", updateAreaUsage);
 
         layer.add(img);
         layer.draw();
+        updateAreaUsage();
       };
+
       imgObj.src = evt.target.result;
     };
+
     reader.readAsDataURL(file);
   });
 });
 
 function autoLayout() {
+
   const gap = document.getElementById('gap').value * SCALE;
   let x = 0;
   let y = 0;
   let rowHeight = 0;
 
-  layer.children.forEach(node => {
+  const nodes = layer.children.toArray()
+    .filter(n => n !== transformer)
+    .sort((a, b) => b.height() - a.height());
+
+  nodes.forEach(node => {
+
     if (x + node.width() > stage.width()) {
       x = 0;
       y += rowHeight + gap;
       rowHeight = 0;
     }
 
-    node.position({x: x, y: y});
+    node.position({x, y});
     x += node.width() + gap;
     rowHeight = Math.max(rowHeight, node.height());
   });
 
   layer.draw();
+  updateAreaUsage();
 }
 
 async function exportPDF() {
+
   const { jsPDF } = window.jspdf;
 
   const carpetWidthCm = document.getElementById('width').value * 100;
@@ -255,25 +270,24 @@ async function exportPDF() {
 
   for (let p = 0; p < totalPages; p++) {
 
-    if (p > 0) {
+    if (p > 0)
       doc.addPage([carpetWidthCm, pageHeightCm], "portrait");
-    }
 
     const pageTopCm = p * pageHeightCm;
 
     for (let node of layer.children) {
 
-      const realX = node.x() / SCALE / 100;
-      const realY = node.y() / SCALE / 100;
-      const realW = node.width() / SCALE / 100;
-      const realH = node.height() / SCALE / 100;
+      if (node === transformer) continue;
+
+      const realX = node.x() / SCALE;
+      const realY = node.y() / SCALE;
+      const realW = node.width() / SCALE;
+      const realH = node.height() / SCALE;
 
       if (realY + realH > pageTopCm && realY < pageTopCm + pageHeightCm) {
 
-        const imgData = node.image().src;
-
         doc.addImage(
-          imgData,
+          node.image().src,
           "JPEG",
           realX,
           realY - pageTopCm,
@@ -284,13 +298,13 @@ async function exportPDF() {
     }
   }
 
-  // เปิด Preview ก่อน
   window.open(doc.output("bloburl"));
-
-  // ถ้าต้องการให้ดาวน์โหลดด้วย ให้เปิดบรรทัดนี้
-  // doc.save("auto-layout.pdf");
 }
 
+document.getElementById('width').onchange = initStage;
+document.getElementById('length').onchange = initStage;
+
+initStage();
 </script>
 
 </body>
