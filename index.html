@@ -145,6 +145,44 @@ function initStage() {
   layer = new Konva.Layer();
   stage.add(layer);
 }
+function updateAreaUsage() {
+
+  const carpetWidthCm = document.getElementById('width').value * 100;
+  const carpetLengthCm = document.getElementById('length').value * 100;
+
+  const carpetArea = carpetWidthCm * carpetLengthCm;
+
+  let usedArea = 0;
+
+  layer.children.forEach(node => {
+    const realW = node.width() / SCALE / 100;
+    const realH = node.height() / SCALE / 100;
+    usedArea += realW * realH;
+  });
+
+  const percent = ((usedArea / carpetArea) * 100).toFixed(2);
+
+  document.getElementById("usedArea").innerText = percent + "%";
+  document.getElementById("carpetSize").innerText =
+    carpetWidthCm + " x " + carpetLengthCm + " cm";
+}
+stage.on("dragmove", function(e) {
+
+  const node = e.target;
+  const snapDistance = 10;
+
+  layer.children.forEach(other => {
+    if (other === node) return;
+
+    if (Math.abs(node.x() - other.x()) < snapDistance) {
+      node.x(other.x());
+    }
+
+    if (Math.abs(node.y() - other.y()) < snapDistance) {
+      node.y(other.y());
+    }
+  });
+});
 
 initStage();
 
