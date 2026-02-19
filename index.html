@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Auto Layout</title>
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial; margin: 0; display: flex; }
+    #controls {
+      width: 300px;
+      padding: 20px;
+      background: #f4f6f8;
+      border-right: 1px solid #ddd;
+    }
+    #container {
+      flex: 1;
+      background: #fff;
+      overflow: auto;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: #1f3c88;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    input { width: 100%; padding: 8px; margin-top: 5px; }
+    h2 { margin-top: 0; }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <h2>Auto Layout</h2>
+
+  <label>Carpet Width (m)</label>
+  <input type="number" id="width" value="4">
+
+  <label>Carpet Length (m)</label>
+  <input type="number" id="length" value="40">
+
+  <label>Gap (cm)</label>
+  <input type="number" id="gap" value="10">
+
+  <input type="file" id="upload" multiple>
+
+  <button onclick="autoLayout()">Auto Layout</button>
+  <button onclick="exportPDF()">Export PDF</button>
+</div>
+
+<div id="container"></div>
+
+<script>
+const SCALE = 0.1;
+let stage;
+let layer;
+
+function initStage() {
+  const width = document.getElementById('width').value * 100 * SCALE;
+  const height = document.getElementById('length').value * 100 * SCALE;
+
+  document.getElementById('container').innerHTML = "";
+  stage = new Konva.Stage({
+    container: 'container',
+    width: width,
+    height: height
+  });
+
+  layer = new Konva.Layer();
+  stage.add(layer);
+}
+
+initStage();
+
+document.getElementById('width').onchange = initStage;
+document.getElementById('length').onchange = initStage;
+
+document.getElementById('upload').addEventListener('change', function(e){
+  Array.from(e.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      const imgObj = new Image();
+      imgObj.onload = function(){
+        const img = new Konva.Image({
+          image: imgObj,
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 200,
+          draggable: true
+        });
+        layer.add(img);
+        layer.draw();
+      };
+      imgObj.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+function autoLayout() {
+  const gap = document.getElementById('gap').value * SCALE;
+  let x = 0;
+  let y = 0;
+  let rowHeight = 0;
+
+  layer.children.forEach(node => {
+    if (x + node.width() > stage.width()) {
+      x = 0;
+      y += rowHeight + gap;
+      rowHeight = 0;
+    }
+
+    node.position({x: x, y: y});
+    x += node.width() + gap;
+    rowHeight = Math.max(rowHeight, node.height());
+  });
+
+  layer.draw();
+}
+
+async function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const pageHeightCm = 200;
+  const totalLengthCm = document.getElementById('length').value * 100;
+  const totalPages = Math.ceil(totalLengthCm / pageHeightCm);
+
+  for (let p = 0; p < totalPages; p++) {
+    if (p > 0) doc.addPage();
+    doc.text("Page " + (p+1), 10, 10);
+  }
+
+  doc.save("auto-layout.pdf");
+}
+</script>
+
+</body>
+</html>
