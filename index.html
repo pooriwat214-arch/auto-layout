@@ -6,6 +6,7 @@
 
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/utif@3.1.0/UTIF.min.js"></script>
 
 <style>
 body{
@@ -152,28 +153,100 @@ initStage();
 document.getElementById('width').onchange=initStage;
 document.getElementById('length').onchange=initStage;
 
-document.getElementById('upload').addEventListener('change',function(e){
+document.getElementById('upload').addEventListener('change', function(e){
 
-  Array.from(e.target.files).forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=function(evt){
-      const imgObj=new Image();
-      imgObj.onload=function(){
+  Array.from(e.target.files).forEach(file => {
 
-        const img=new Konva.Image({
-          image:imgObj,
-          x:0,y:0,
-          width:200,
-          height:200,
-          draggable:true,
-          dragBoundFunc:function(pos){
-            return{
-              x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
-              y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
-            };
-          }
-        });
+    const fileName = file.name.toLowerCase();
 
+    if(fileName.endsWith(".tif") || fileName.endsWith(".tiff")){
+
+      const reader = new FileReader();
+
+      reader.onload = function(event){
+
+        const buffer = event.target.result;
+        const ifds = UTIF.decode(buffer);
+        UTIF.decodeImages(buffer, ifds);
+
+        const firstPage = ifds[0];
+        const rgba = UTIF.toRGBA8(firstPage);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = firstPage.width;
+        canvas.height = firstPage.height;
+
+        const ctx = canvas.getContext("2d");
+        const imageData = ctx.createImageData(firstPage.width, firstPage.height);
+        imageData.data.set(rgba);
+        ctx.putImageData(imageData, 0, 0);
+
+        const imgObj = new Image();
+        imgObj.onload = function(){
+
+          const img = new Konva.Image({
+            image: imgObj,
+            x:0,
+            y:0,
+            width:200,
+            height:200,
+            draggable:true,
+            dragBoundFunc:function(pos){
+              return{
+                x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
+                y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
+              };
+            }
+          });
+
+          layer.add(img);
+          layer.draw();
+          updateAreaUsage();
+        };
+
+        imgObj.src = canvas.toDataURL("image/png");
+      };
+
+      reader.readAsArrayBuffer(file);
+
+    } else {
+
+      // JPG / PNG ปกติ
+      const reader = new FileReader();
+
+      reader.onload = function(evt){
+        const imgObj = new Image();
+        imgObj.onload = function(){
+
+          const img = new Konva.Image({
+            image: imgObj,
+            x:0,
+            y:0,
+            width:200,
+            height:200,
+            draggable:true,
+            dragBoundFunc:function(pos){
+              return{
+                x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
+                y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
+              };
+            }
+          });
+
+          layer.add(img);
+          layer.draw();
+          updateAreaUsage();
+        };
+
+        imgObj.src = evt.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+  });
+
+});
         layer.add(img);
         layer.draw();
         updateAreaUsage();
