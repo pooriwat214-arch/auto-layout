@@ -5,50 +5,122 @@
   <title>Auto Layout</title>
   <script src="https://unpkg.com/konva@9/konva.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body { font-family: Arial; margin: 0; display: flex; }
-    #controls {
-      width: 300px;
-      padding: 20px;
-      background: #f4f6f8;
-      border-right: 1px solid #ddd;
-    }
-    #container {
-      flex: 1;
-      background: #fff;
-      overflow: auto;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      background: #1f3c88;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    input { width: 100%; padding: 8px; margin-top: 5px; }
-    h2 { margin-top: 0; }
-  </style>
+ <style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial;
+  background: #eef1f5;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Top Bar */
+.topbar {
+  background: #0f1f3d;
+  color: white;
+  padding: 15px 20px;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* Main Layout */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+#controls {
+  width: 320px;
+  padding: 20px;
+  background: white;
+  border-right: 1px solid #dcdcdc;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+#controls h3 {
+  margin-top: 0;
+  color: #0f1f3d;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: #1f3c88;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button:hover {
+  background: #162d66;
+}
+
+/* Workspace */
+#workspace {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
+
+.canvas-wrapper {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  display: inline-block;
+}
+</style>
+
 </head>
 <body>
 
-<div id="controls">
-  <h2>Auto Layout</h2>
+<div class="topbar">
+  AUTO LAYOUT – Carpet Layout Management Tool
+</div>
 
-  <label>Carpet Width (m)</label>
-  <input type="number" id="width" value="4">
+<div class="main">
 
-  <label>Carpet Length (m)</label>
-  <input type="number" id="length" value="40">
+  <div id="controls">
+    <h3>Project Settings</h3>
 
-  <label>Gap (cm)</label>
-  <input type="number" id="gap" value="10">
+    <label>Carpet Width (m)</label>
+    <input type="number" id="width" value="4">
 
-  <input type="file" id="upload" multiple>
+    <label>Carpet Length (m)</label>
+    <input type="number" id="length" value="40">
 
-  <button onclick="autoLayout()">Auto Layout</button>
-  <button onclick="exportPDF()">Export PDF</button>
+    <label>Gap (cm)</label>
+    <input type="number" id="gap" value="10">
+
+    <label>Upload Images</label>
+    <input type="file" id="upload" multiple>
+
+    <button onclick="autoLayout()">Auto Layout</button>
+    <button onclick="exportPDF()">Export PDF</button>
+  </div>
+
+  <div id="workspace">
+    <div class="canvas-wrapper">
+      <div id="container"></div>
+    </div>
+  </div>
+
 </div>
 
 <div id="container"></div>
