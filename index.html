@@ -124,18 +124,49 @@ function autoLayout() {
 
 async function exportPDF() {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+
+  const carpetWidthCm = document.getElementById('width').value * 100;
+  const carpetLengthCm = document.getElementById('length').value * 100;
 
   const pageHeightCm = 200;
-  const totalLengthCm = document.getElementById('length').value * 100;
-  const totalPages = Math.ceil(totalLengthCm / pageHeightCm);
+  const totalPages = Math.ceil(carpetLengthCm / pageHeightCm);
+
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "cm",
+    format: [carpetWidthCm, pageHeightCm]
+  });
 
   for (let p = 0; p < totalPages; p++) {
-    if (p > 0) doc.addPage();
-    doc.text("Page " + (p+1), 10, 10);
+
+    if (p > 0) {
+      doc.addPage([carpetWidthCm, pageHeightCm], "portrait");
+    }
+
+    const pageTopCm = p * pageHeightCm;
+
+    layer.children.forEach(node => {
+
+      const realX = node.x() / SCALE / 100;
+      const realY = node.y() / SCALE / 100;
+      const realW = node.width() / SCALE / 100;
+      const realH = node.height() / SCALE / 100;
+
+      if (realY + realH > pageTopCm && realY < pageTopCm + pageHeightCm) {
+
+        doc.rect(
+          realX,
+          realY - pageTopCm,
+          realW,
+          realH
+        );
+      }
+    });
   }
 
   doc.save("auto-layout.pdf");
+}
+
 }
 </script>
 
