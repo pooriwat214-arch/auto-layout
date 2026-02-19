@@ -2,73 +2,75 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>Auto Layout</title>
+<title>AUTO LAYOUT</title>
 
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body {
-  margin: 0;
-  font-family: "Segoe UI", Arial;
-  background: #eef1f5;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+body{
+  margin:0;
+  font-family:"Segoe UI",Arial;
+  background:#eef1f5;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
 }
 
-.topbar {
-  background: #0f1f3d;
-  color: white;
-  padding: 15px 20px;
-  font-size: 18px;
-  font-weight: bold;
+.topbar{
+  background:#0f1f3d;
+  color:white;
+  padding:15px 20px;
+  font-weight:bold;
+  letter-spacing:1px;
 }
 
-.main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
+.main{
+  flex:1;
+  display:flex;
+  overflow:hidden;
 }
 
-#controls {
-  width: 320px;
-  padding: 20px;
-  background: white;
-  border-right: 1px solid #dcdcdc;
+#controls{
+  width:320px;
+  padding:20px;
+  background:white;
+  border-right:1px solid #ddd;
 }
 
-input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
+input{
+  width:100%;
+  padding:8px;
+  margin-bottom:10px;
 }
 
-button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  background: #1f3c88;
-  color: white;
-  border: none;
-  cursor: pointer;
+button{
+  width:100%;
+  padding:10px;
+  margin-top:5px;
+  background:#1f3c88;
+  color:white;
+  border:none;
+  cursor:pointer;
 }
 
-#workspace {
-  flex: 1;
-  padding: 20px;
-  overflow: auto;
+#workspace{
+  flex:1;
+  padding:20px;
+  overflow:auto;
 }
 
-.canvas-wrapper {
-  background: white;
-  padding: 20px;
-  display: inline-block;
-}
-
-.info {
-  margin-top: 15px;
-  font-size: 14px;
+.canvas-wrapper{
+  background:white;
+  padding:20px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+  background-image: repeating-linear-gradient(
+    45deg,
+    #f5f7fa,
+    #f5f7fa 10px,
+    #e9edf2 10px,
+    #e9edf2 20px
+  );
 }
 </style>
 </head>
@@ -97,10 +99,15 @@ AUTO LAYOUT – Carpet Layout Management Tool
 
 <button onclick="autoLayout()">Auto Layout</button>
 <button onclick="exportPDF()">Export PDF</button>
+<button onclick="lockImage()">Lock / Unlock</button>
+<button onclick="deleteImage()">Delete Selected</button>
 
-<div class="info">
-Carpet Size: <span id="carpetSize"></span><br>
+<div style="margin-top:20px;font-weight:bold;">
 Used Area: <span id="usedArea">0%</span>
+</div>
+
+<div>
+Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 </div>
 
 </div>
@@ -114,183 +121,204 @@ Used Area: <span id="usedArea">0%</span>
 </div>
 
 <script>
+
 const SCALE = 0.1;
-let stage;
-let layer;
-let transformer;
+let stage, layer;
+let selectedNode = null;
 
-function initStage() {
+function initStage(){
 
-  const width = document.getElementById('width').value * 100 * SCALE;
-  const height = document.getElementById('length').value * 100 * SCALE;
+  const widthCm = document.getElementById('width').value * 100;
+  const lengthCm = document.getElementById('length').value * 100;
 
-  document.getElementById('container').innerHTML = "";
+  const widthPx = widthCm * SCALE;
+  const heightPx = lengthCm * SCALE;
+
+  document.getElementById("container").innerHTML="";
 
   stage = new Konva.Stage({
-    container: 'container',
-    width: width,
-    height: height
+    container:'container',
+    width:widthPx,
+    height:heightPx
   });
 
   layer = new Konva.Layer();
   stage.add(layer);
 
-  transformer = new Konva.Transformer();
-  layer.add(transformer);
+  const carpet = new Konva.Rect({
+    x:0,
+    y:0,
+    width:widthPx,
+    height:heightPx,
+    fill:"#ffffff",
+    stroke:"#0f1f3d",
+    strokeWidth:2
+  });
 
-  stage.on("dragmove", snapLogic);
+  layer.add(carpet);
 
+  drawPageLines(lengthCm);
   updateAreaUsage();
 }
 
-function snapLogic(e) {
-  const node = e.target;
-  const snapDistance = 10;
+function drawPageLines(totalCm){
 
-  layer.children.forEach(other => {
-    if (other === node || other === transformer) return;
+  const pageHeightPx = 200 * SCALE;
+  const totalPages = Math.floor(totalCm/200);
 
-    if (Math.abs(node.x() - other.x()) < snapDistance)
-      node.x(other.x());
-
-    if (Math.abs(node.y() - other.y()) < snapDistance)
-      node.y(other.y());
-
-    if (Math.abs(node.x() + node.width() - other.x()) < snapDistance)
-      node.x(other.x() - node.width());
-  });
-
-  layer.draw();
-  updateAreaUsage();
+  for(let i=1;i<=totalPages;i++){
+    const line = new Konva.Line({
+      points:[0, i*pageHeightPx, stage.width(), i*pageHeightPx],
+      stroke:"red",
+      dash:[5,5]
+    });
+    layer.add(line);
+  }
 }
 
-function updateAreaUsage() {
+initStage();
+document.getElementById('width').onchange=initStage;
+document.getElementById('length').onchange=initStage;
 
-  const carpetWidthCm = document.getElementById('width').value * 100;
-  const carpetLengthCm = document.getElementById('length').value * 100;
+document.getElementById('upload').addEventListener('change',function(e){
 
-  const carpetArea = carpetWidthCm * carpetLengthCm;
-  let usedArea = 0;
+  Array.from(e.target.files).forEach(file=>{
+    const reader=new FileReader();
 
-  layer.children.forEach(node => {
-    if (node === transformer) return;
-    const realW = node.width() / SCALE;
-    const realH = node.height() / SCALE;
-    usedArea += realW * realH;
-  });
+    reader.onload=function(evt){
+      const imgObj=new Image();
 
-  const percent = ((usedArea / carpetArea) * 100).toFixed(2);
+      imgObj.onload=function(){
 
-  document.getElementById("usedArea").innerText = percent + "%";
-  document.getElementById("carpetSize").innerText =
-    carpetWidthCm + " x " + carpetLengthCm + " cm";
-}
-
-document.getElementById('upload').addEventListener('change', function(e){
-  Array.from(e.target.files).forEach(file => {
-
-    const reader = new FileReader();
-
-    reader.onload = function(evt){
-      const imgObj = new Image();
-
-      imgObj.onload = function(){
-
-        const img = new Konva.Image({
-          image: imgObj,
-          x: 0,
-          y: 0,
-          width: 200,
-          height: 200,
-          draggable: true
+        const img=new Konva.Image({
+          image:imgObj,
+          x:0,
+          y:0,
+          width:200,
+          height:200,
+          draggable:true,
+          dragBoundFunc:function(pos){
+            return{
+              x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
+              y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
+            };
+          }
         });
 
-        img.on("click", () => {
-          transformer.nodes([img]);
-          layer.draw();
-        });
-
-        img.on("transformend dragend", updateAreaUsage);
+        img.on("click",()=>selectedNode=img);
+        img.on("dragend",updateAreaUsage);
 
         layer.add(img);
         layer.draw();
         updateAreaUsage();
       };
 
-      imgObj.src = evt.target.result;
+      imgObj.src=evt.target.result;
     };
 
     reader.readAsDataURL(file);
   });
+
 });
 
-function autoLayout() {
+function autoLayout(){
 
   const gap = document.getElementById('gap').value * SCALE;
-  let x = 0;
-  let y = 0;
-  let rowHeight = 0;
+  let x=0,y=0,rowHeight=0;
 
-  const nodes = layer.children.toArray()
-    .filter(n => n !== transformer)
-    .sort((a, b) => b.height() - a.height());
+  layer.children.forEach(node=>{
 
-  nodes.forEach(node => {
+    if(node.className!=="Image") return;
 
-    if (x + node.width() > stage.width()) {
-      x = 0;
-      y += rowHeight + gap;
-      rowHeight = 0;
+    if(x+node.width()>stage.width()){
+      x=0;
+      y+=rowHeight+gap;
+      rowHeight=0;
     }
 
-    node.position({x, y});
-    x += node.width() + gap;
-    rowHeight = Math.max(rowHeight, node.height());
+    if(y+node.height()>stage.height()) return;
+
+    node.position({x,y});
+    x+=node.width()+gap;
+    rowHeight=Math.max(rowHeight,node.height());
   });
 
   layer.draw();
   updateAreaUsage();
 }
 
-async function exportPDF() {
+function lockImage(){
+  if(!selectedNode) return;
+  selectedNode.draggable(!selectedNode.draggable());
+}
+
+function deleteImage(){
+  if(!selectedNode) return;
+  selectedNode.destroy();
+  selectedNode=null;
+  layer.draw();
+  updateAreaUsage();
+}
+
+function updateAreaUsage(){
+
+  const widthCm=document.getElementById('width').value*100;
+  const lengthCm=document.getElementById('length').value*100;
+  const carpetArea=widthCm*lengthCm;
+
+  let used=0;
+
+  layer.children.forEach(node=>{
+    if(node.className==="Image"){
+      used+=(node.width()/SCALE/100)*(node.height()/SCALE/100);
+    }
+  });
+
+  const percent=((used/carpetArea)*100).toFixed(2);
+
+  document.getElementById("usedArea").innerText=percent+"%";
+  document.getElementById("carpetSize").innerText=
+  widthCm+" x "+lengthCm+" cm";
+}
+
+async function exportPDF(){
 
   const { jsPDF } = window.jspdf;
 
-  const carpetWidthCm = document.getElementById('width').value * 100;
-  const carpetLengthCm = document.getElementById('length').value * 100;
+  const widthCm=document.getElementById('width').value*100;
+  const lengthCm=document.getElementById('length').value*100;
 
-  const pageHeightCm = 200;
-  const totalPages = Math.ceil(carpetLengthCm / pageHeightCm);
+  const pageHeight=200;
+  const totalPages=Math.ceil(lengthCm/pageHeight);
 
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "cm",
-    format: [carpetWidthCm, pageHeightCm]
+  const doc=new jsPDF({
+    orientation:"portrait",
+    unit:"cm",
+    format:[widthCm,pageHeight]
   });
 
-  for (let p = 0; p < totalPages; p++) {
+  for(let p=0;p<totalPages;p++){
 
-    if (p > 0)
-      doc.addPage([carpetWidthCm, pageHeightCm], "portrait");
+    if(p>0) doc.addPage([widthCm,pageHeight]);
 
-    const pageTopCm = p * pageHeightCm;
+    const pageTop=p*pageHeight;
 
-    for (let node of layer.children) {
+    for(let node of layer.children){
 
-      if (node === transformer) continue;
+      if(node.className!=="Image") continue;
 
-      const realX = node.x() / SCALE;
-      const realY = node.y() / SCALE;
-      const realW = node.width() / SCALE;
-      const realH = node.height() / SCALE;
+      const realX=node.x()/SCALE/100;
+      const realY=node.y()/SCALE/100;
+      const realW=node.width()/SCALE/100;
+      const realH=node.height()/SCALE/100;
 
-      if (realY + realH > pageTopCm && realY < pageTopCm + pageHeightCm) {
+      if(realY+realH>pageTop && realY<pageTop+pageHeight){
 
         doc.addImage(
           node.image().src,
           "JPEG",
           realX,
-          realY - pageTopCm,
+          realY-pageTop,
           realW,
           realH
         );
@@ -301,11 +329,6 @@ async function exportPDF() {
   window.open(doc.output("bloburl"));
 }
 
-document.getElementById('width').onchange = initStage;
-document.getElementById('length').onchange = initStage;
-
-initStage();
 </script>
-
 </body>
 </html>
