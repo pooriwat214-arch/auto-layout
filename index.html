@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>AUTO LAYOUT</title>
+<title>AUTO LAYOUT – Production</title>
 
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -20,9 +20,8 @@ body{
 .topbar{
   background:#0f1f3d;
   color:white;
-  padding:15px 20px;
-  font-weight:bold;
-  letter-spacing:1px;
+  padding:14px 20px;
+  font-weight:600;
 }
 
 .main{
@@ -47,7 +46,7 @@ input{
 button{
   width:100%;
   padding:10px;
-  margin-top:5px;
+  margin-top:6px;
   background:#1f3c88;
   color:white;
   border:none;
@@ -64,13 +63,6 @@ button{
   background:white;
   padding:20px;
   box-shadow:0 3px 8px rgba(0,0,0,0.1);
-  background-image: repeating-linear-gradient(
-    45deg,
-    #f5f7fa,
-    #f5f7fa 10px,
-    #e9edf2 10px,
-    #e9edf2 20px
-  );
 }
 </style>
 </head>
@@ -78,7 +70,7 @@ button{
 <body>
 
 <div class="topbar">
-AUTO LAYOUT – Carpet Layout Management Tool
+AUTO LAYOUT – Production Version
 </div>
 
 <div class="main">
@@ -97,12 +89,10 @@ AUTO LAYOUT – Carpet Layout Management Tool
 <label>Upload Images</label>
 <input type="file" id="upload" multiple>
 
-<button onclick="autoLayout()">Auto Layout</button>
-<button onclick="exportPDF()">Export PDF</button>
-<button onclick="lockImage()">Lock / Unlock</button>
-<button onclick="deleteImage()">Delete Selected</button>
+<button onclick="autoLayout()">Smart Auto Layout</button>
+<button onclick="exportPDF()">Export Production PDF</button>
 
-<div style="margin-top:20px;font-weight:bold;">
+<div style="margin-top:15px;font-weight:bold;">
 Used Area: <span id="usedArea">0%</span>
 </div>
 
@@ -124,12 +114,11 @@ Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 
 const SCALE = 0.1;
 let stage, layer;
-let selectedNode = null;
 
 function initStage(){
 
-  const widthCm = document.getElementById('width').value * 100;
-  const lengthCm = document.getElementById('length').value * 100;
+  const widthCm = document.getElementById('width').value*100;
+  const lengthCm = document.getElementById('length').value*100;
 
   const widthPx = widthCm * SCALE;
   const heightPx = lengthCm * SCALE;
@@ -146,34 +135,17 @@ function initStage(){
   stage.add(layer);
 
   const carpet = new Konva.Rect({
-    x:0,
-    y:0,
+    x:0,y:0,
     width:widthPx,
     height:heightPx,
     fill:"#ffffff",
-    stroke:"#0f1f3d",
+    stroke:"#000",
     strokeWidth:2
   });
 
   layer.add(carpet);
-
-  drawPageLines(lengthCm);
+  layer.draw();
   updateAreaUsage();
-}
-
-function drawPageLines(totalCm){
-
-  const pageHeightPx = 200 * SCALE;
-  const totalPages = Math.floor(totalCm/200);
-
-  for(let i=1;i<=totalPages;i++){
-    const line = new Konva.Line({
-      points:[0, i*pageHeightPx, stage.width(), i*pageHeightPx],
-      stroke:"red",
-      dash:[5,5]
-    });
-    layer.add(line);
-  }
 }
 
 initStage();
@@ -184,16 +156,13 @@ document.getElementById('upload').addEventListener('change',function(e){
 
   Array.from(e.target.files).forEach(file=>{
     const reader=new FileReader();
-
     reader.onload=function(evt){
       const imgObj=new Image();
-
       imgObj.onload=function(){
 
         const img=new Konva.Image({
           image:imgObj,
-          x:0,
-          y:0,
+          x:0,y:0,
           width:200,
           height:200,
           draggable:true,
@@ -205,57 +174,58 @@ document.getElementById('upload').addEventListener('change',function(e){
           }
         });
 
-        img.on("click",()=>selectedNode=img);
-        img.on("dragend",updateAreaUsage);
-
         layer.add(img);
         layer.draw();
         updateAreaUsage();
       };
-
       imgObj.src=evt.target.result;
     };
-
     reader.readAsDataURL(file);
   });
-
 });
 
 function autoLayout(){
 
   const gap = document.getElementById('gap').value * SCALE;
-  let x=0,y=0,rowHeight=0;
 
-  layer.children.forEach(node=>{
+  const freeRects=[{
+    x:0,y:0,
+    width:stage.width(),
+    height:stage.height()
+  }];
 
-    if(node.className!=="Image") return;
+  const images=layer.children.filter(n=>n.className==="Image");
 
-    if(x+node.width()>stage.width()){
-      x=0;
-      y+=rowHeight+gap;
-      rowHeight=0;
+  images.sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
+
+  images.forEach(img=>{
+    for(let i=0;i<freeRects.length;i++){
+      const r=freeRects[i];
+      if(img.width()+gap<=r.width && img.height()+gap<=r.height){
+
+        img.position({x:r.x,y:r.y});
+
+        freeRects.splice(i,1);
+
+        freeRects.push({
+          x:r.x+img.width()+gap,
+          y:r.y,
+          width:r.width-img.width()-gap,
+          height:img.height()+gap
+        });
+
+        freeRects.push({
+          x:r.x,
+          y:r.y+img.height()+gap,
+          width:r.width,
+          height:r.height-img.height()-gap
+        });
+
+        break;
+      }
     }
-
-    if(y+node.height()>stage.height()) return;
-
-    node.position({x,y});
-    x+=node.width()+gap;
-    rowHeight=Math.max(rowHeight,node.height());
   });
 
-  layer.draw();
-  updateAreaUsage();
-}
-
-function lockImage(){
-  if(!selectedNode) return;
-  selectedNode.draggable(!selectedNode.draggable());
-}
-
-function deleteImage(){
-  if(!selectedNode) return;
-  selectedNode.destroy();
-  selectedNode=null;
   layer.draw();
   updateAreaUsage();
 }
@@ -268,15 +238,15 @@ function updateAreaUsage(){
 
   let used=0;
 
-  layer.children.forEach(node=>{
-    if(node.className==="Image"){
-      used+=(node.width()/SCALE/100)*(node.height()/SCALE/100);
+  layer.children.forEach(n=>{
+    if(n.className==="Image"){
+      used+=(n.width()/SCALE/100)*(n.height()/SCALE/100);
     }
   });
 
-  const percent=((used/carpetArea)*100).toFixed(2);
+  document.getElementById("usedArea").innerText=
+  ((used/carpetArea)*100).toFixed(2)+"%";
 
-  document.getElementById("usedArea").innerText=percent+"%";
   document.getElementById("carpetSize").innerText=
   widthCm+" x "+lengthCm+" cm";
 }
@@ -302,6 +272,7 @@ async function exportPDF(){
     if(p>0) doc.addPage([widthCm,pageHeight]);
 
     const pageTop=p*pageHeight;
+    const pageBottom=pageTop+pageHeight;
 
     for(let node of layer.children){
 
@@ -312,15 +283,43 @@ async function exportPDF(){
       const realW=node.width()/SCALE/100;
       const realH=node.height()/SCALE/100;
 
-      if(realY+realH>pageTop && realY<pageTop+pageHeight){
+      const imgTop=realY;
+      const imgBottom=realY+realH;
+
+      if(imgBottom>pageTop && imgTop<pageBottom){
+
+        const visibleTop=Math.max(imgTop,pageTop);
+        const visibleBottom=Math.min(imgBottom,pageBottom);
+        const visibleHeight=visibleBottom-visibleTop;
+
+        const cropStartPx=(visibleTop-imgTop)*100*SCALE;
+        const cropHeightPx=visibleHeight*100*SCALE;
+
+        const canvas=document.createElement("canvas");
+        canvas.width=node.width();
+        canvas.height=cropHeightPx;
+
+        const ctx=canvas.getContext("2d");
+
+        ctx.drawImage(
+          node.image(),
+          0,
+          cropStartPx,
+          node.width(),
+          cropHeightPx,
+          0,
+          0,
+          node.width(),
+          cropHeightPx
+        );
 
         doc.addImage(
-          node.image().src,
+          canvas.toDataURL("image/jpeg"),
           "JPEG",
           realX,
-          realY-pageTop,
+          visibleTop-pageTop,
           realW,
-          realH
+          visibleHeight
         );
       }
     }
