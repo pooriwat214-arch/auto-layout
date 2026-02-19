@@ -129,6 +129,7 @@ button:hover {
 const SCALE = 0.1;
 let stage;
 let layer;
+let selectedNode = null;
 
 function initStage() {
   const width = document.getElementById('width').value * 100 * SCALE;
@@ -157,13 +158,18 @@ document.getElementById('upload').addEventListener('change', function(e){
       const imgObj = new Image();
       imgObj.onload = function(){
         const img = new Konva.Image({
-          image: imgObj,
-          x: 0,
-          y: 0,
-          width: 200,
-          height: 200,
-          draggable: true
-        });
+  image: imgObj,
+  x: 0,
+  y: 0,
+  width: 200,
+  height: 200,
+  draggable: true
+});
+
+img.on("click", () => {
+  selectedNode = img;
+});
+
         layer.add(img);
         layer.draw();
       };
