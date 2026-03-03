@@ -215,23 +215,35 @@ document.getElementById("upload").addEventListener("change", function(e){
 
       const imgObj = new Image();
 
-      imgObj.onload = function(){
+    imgObj.onload = function(){
 
-        const img = new Konva.Image({
-          image: imgObj,
-          x: 0,
-          y: 0,
-          width: widthPx * SCALE * 0.1,
-          height: heightPx * SCALE * 0.1,
-          draggable: true
-        });
+  // ====== อ่าน DPI จาก TIFF ======
+  const dpiX = page["XResolution"] ? page["XResolution"][0] / page["XResolution"][1] : 72;
+  const dpiY = page["YResolution"] ? page["YResolution"][0] / page["YResolution"][1] : 72;
 
-        layer.add(img);
-        layer.draw();
+  // แปลง pixel → inch → cm
+  const widthCm = (widthPx / dpiX) * 2.54;
+  const heightCm = (heightPx / dpiY) * 2.54;
 
-        updateImageCount();
-        updateAreaUsage();
-      };
+  // แปลง cm → canvas pixel
+  const displayWidth = widthCm * SCALE;
+  const displayHeight = heightCm * SCALE;
+
+  const img = new Konva.Image({
+    image: imgObj,
+    x: 0,
+    y: 0,
+    width: displayWidth,
+    height: displayHeight,
+    draggable: true
+  });
+
+  layer.add(img);
+  layer.draw();
+
+  updateImageCount();
+  updateAreaUsage();
+};
 
       imgObj.src = tempCanvas.toDataURL();
     };
