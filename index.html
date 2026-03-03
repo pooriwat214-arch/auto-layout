@@ -143,14 +143,15 @@ Images: <span id="imageCount">0</span><br>
 Used Area: <span id="usedArea">0%</span><br>
 Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 </div>
-<div class="editor-wrapper">
+<div id="workspace">
+  <div class="editor-wrapper">
 
-  <div class="ruler-corner"></div>
-  <canvas id="ruler-top"></canvas>
+    <div class="ruler-corner"></div>
+    <canvas id="ruler-top"></canvas>
+    <canvas id="ruler-left"></canvas>
+    <div id="container"></div>
 
-  <canvas id="ruler-left"></canvas>
-  <div id="stage-container"></div>
-
+  </div>
 </div>
 </div>
 
@@ -168,25 +169,83 @@ let SCALE = 1;
 
 window.addEventListener("load", initStage);
 window.addEventListener("resize", initStage);
-const stage = new Konva.Stage({
-  container: 'stage-container',
-  width: ...,
-  height: ...
-});
-  const SCALE = 10;
-
+  
 const rulerTop = document.getElementById("ruler-top");
 const rulerLeft = document.getElementById("ruler-left");
 
 const ctxTop = rulerTop.getContext("2d");
 const ctxLeft = rulerLeft.getContext("2d");
 
-function resizeRulers(){
+function initRulers(){
+
+  const rulerTop = document.getElementById("ruler-top");
+  const rulerLeft = document.getElementById("ruler-left");
+
   rulerTop.width = stage.width();
   rulerTop.height = 30;
 
   rulerLeft.width = 30;
   rulerLeft.height = stage.height();
+
+  const ctxTop = rulerTop.getContext("2d");
+  const ctxLeft = rulerLeft.getContext("2d");
+
+  ctxTop.fillStyle = "#2b2b2b";
+  ctxTop.fillRect(0,0,rulerTop.width,30);
+
+  ctxLeft.fillStyle = "#2b2b2b";
+  ctxLeft.fillRect(0,0,30,rulerLeft.height);
+
+  ctxTop.strokeStyle = "#aaa";
+  ctxLeft.strokeStyle = "#aaa";
+
+  ctxTop.fillStyle = "#fff";
+  ctxLeft.fillStyle = "#fff";
+
+  ctxTop.font = "10px Arial";
+  ctxLeft.font = "10px Arial";
+
+  const effectiveScale = SCALE;
+
+  for(let i=0; i<rulerTop.width/effectiveScale; i++){
+
+    const x = i * effectiveScale;
+
+    let tick = 5;
+    if(i % 10 === 0) tick = 15;
+    else if(i % 5 === 0) tick = 10;
+
+    ctxTop.beginPath();
+    ctxTop.moveTo(x,30);
+    ctxTop.lineTo(x,30-tick);
+    ctxTop.stroke();
+
+    if(i % 10 === 0){
+      ctxTop.fillText(i, x+2, 10);
+    }
+  }
+
+  for(let i=0; i<rulerLeft.height/effectiveScale; i++){
+
+    const y = i * effectiveScale;
+
+    let tick = 5;
+    if(i % 10 === 0) tick = 15;
+    else if(i % 5 === 0) tick = 10;
+
+    ctxLeft.beginPath();
+    ctxLeft.moveTo(30,y);
+    ctxLeft.lineTo(30-tick,y);
+    ctxLeft.stroke();
+
+    if(i % 10 === 0){
+      ctxLeft.save();
+      ctxLeft.translate(2,y+3);
+      ctxLeft.rotate(-Math.PI/2);
+      ctxLeft.fillText(i,0,0);
+      ctxLeft.restore();
+    }
+  }
 }
 
 function drawRulers(){
