@@ -136,17 +136,11 @@ window.addEventListener("resize", initStage);
 function getResponsiveScale(){
 
   const widthCm = parseFloat(document.getElementById("width").value) * 100;
-  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
-
   const workspace = document.getElementById("workspace");
 
   const maxWidth = workspace.clientWidth - 100;
-  const maxHeight = workspace.clientHeight - 100;
 
-  const scaleX = maxWidth / widthCm;
-  const scaleY = maxHeight / lengthCm;
-
-  return Math.min(scaleX, scaleY);
+  return maxWidth / widthCm;
 }
 
 /* ================= INIT STAGE ================= */
