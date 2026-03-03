@@ -65,7 +65,7 @@ body{
   font-size:14px;
   font-weight:600;
 }
-input{
+input, select{
   width:100%;
   padding:7px 8px;
   margin-bottom:10px;
@@ -73,7 +73,7 @@ input{
   border-radius:6px;
   font-size:14px;
 }
-input:focus{
+input:focus, select:focus{
   outline:none;
   border-color:#6ca0ff;
   box-shadow:0 0 0 2px rgba(108,160,255,0.25);
@@ -153,6 +153,16 @@ button:hover{filter:brightness(1.05);}
   font-size:10px;
   background:#1f3c88;
 }
+.file-details.empty{
+  opacity:1;
+  color:#f9fafb;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  font-weight:600;
+  background:rgba(255,255,255,0.08);
+}
 .file-details.empty{opacity:.8;}
 .footer-info{
   font-size:12px;
@@ -181,6 +191,12 @@ button:hover{filter:brightness(1.05);}
     <label>Gap (cm)</label>
     <input type="number" id="gap" value="1" min="0" step="1">
 
+    <label>Color Profile</label>
+    <select id="colorProfile">
+      <option value="RGB" selected>RGB (sRGB IEC61966-2.1)</option>
+      <option value="CMYK">CMYK (Coated FOGRA39)</option>
+    </select>
+
     <label>Upload Images</label>
     <input type="file" id="upload" multiple>
     <div id="fileDetails" class="file-details empty">No files selected</div>
@@ -194,7 +210,8 @@ button:hover{filter:brightness(1.05);}
       Images: <span id="imageCount">0</span><br>
       Used Area: <span id="usedArea">0%</span><br>
       Carpet Size: <span id="carpetSize">0 x 0 cm</span><br>
-      Zoom: <span id="zoomLevel">100%</span>
+      Zoom: <span id="zoomLevel">100%</span><br>
+      Profile: <span id="profileInfo">RGB</span>
     </div>
   </div>
 
@@ -220,7 +237,7 @@ const MAX_ZOOM = 4;
 
 window.addEventListener("load", initStage);
 window.addEventListener("resize", initStage);
-["width","length","gap"].forEach(id => {
+["width","length","gap","colorProfile"].forEach(id => {
   document.getElementById(id).addEventListener("change", initStage);
 });
   
@@ -271,6 +288,18 @@ function updateGridToggleButton(){
 function updateZoomInfo(){
   const zoomEl = document.getElementById("zoomLevel");
   if(zoomEl) zoomEl.innerText = `${(VIEW_ZOOM * 100).toFixed(0)}%`;
+}
+
+function getSelectedProfile(){
+  return document.getElementById("colorProfile").value;
+}
+
+function updateProfileUI(){
+  const profile = getSelectedProfile();
+  const status = document.getElementById("systemStatus");
+  const profileInfo = document.getElementById("profileInfo");
+  if(status) status.innerText = `READY • ${profile}`;
+  if(profileInfo) profileInfo.innerText = profile;
 }
 
 function renderGridOverlay(){
@@ -469,12 +498,15 @@ function initStage(){
   stage.add(gridLayer);
   stage.add(imageLayer);
 
+  const profile = getSelectedProfile();
+  const carpetFill = profile === "CMYK" ? "#f8f8f4" : "#ffffff";
+
   const carpet = new Konva.Rect({
     x: 0,
     y: 0,
     width: widthPx,
     height: heightPx,
-    fill: "#ffffff",
+    fill: carpetFill,
     stroke: "black",
     strokeWidth: 2
   });
@@ -487,6 +519,7 @@ function initStage(){
   initRulers();
   updateGridToggleButton();
   updateZoomInfo();
+  updateProfileUI();
   updateAreaUsage();
 }
 
@@ -662,7 +695,8 @@ function exportPDF(){
 
   const imageData = stage.toDataURL({ pixelRatio: 2 });
   pdf.addImage(imageData, "PNG", 0, 0, stage.width(), stage.height());
-  pdf.save("auto-layout-production.pdf");
+  const profile = getSelectedProfile().toLowerCase();
+  pdf.save(`auto-layout-production-${profile}.pdf`);
 }
 
 function updateAreaUsage(){
