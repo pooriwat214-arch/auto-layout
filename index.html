@@ -57,6 +57,36 @@ button{
 }
 .btn-primary{background:#1f3c88;color:white;}
 .btn-secondary{background:#ecf0f1;}
+  .editor-wrapper{
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  grid-template-rows: 30px 1fr;
+  width: 100vw;
+  height: 100vh;
+}
+
+.ruler-corner{
+  grid-column: 1;
+  grid-row: 1;
+  background: #2b2b2b;
+}
+
+#ruler-top{
+  grid-column: 2;
+  grid-row: 1;
+  background: #2b2b2b;
+}
+
+#ruler-left{
+  grid-column: 1;
+  grid-row: 2;
+  background: #2b2b2b;
+}
+
+#stage-container{
+  grid-column: 2;
+  grid-row: 2;
+}
 #workspace{
   flex:1;
   padding:24px;
@@ -113,7 +143,15 @@ Images: <span id="imageCount">0</span><br>
 Used Area: <span id="usedArea">0%</span><br>
 Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 </div>
+<div class="editor-wrapper">
 
+  <div class="ruler-corner"></div>
+  <canvas id="ruler-top"></canvas>
+
+  <canvas id="ruler-left"></canvas>
+  <div id="stage-container"></div>
+
+</div>
 </div>
 
 <div id="workspace">
@@ -130,7 +168,88 @@ let SCALE = 1;
 
 window.addEventListener("load", initStage);
 window.addEventListener("resize", initStage);
+const stage = new Konva.Stage({
+  container: 'stage-container',
+  width: ...,
+  height: ...
+});
+  const SCALE = 10;
 
+const rulerTop = document.getElementById("ruler-top");
+const rulerLeft = document.getElementById("ruler-left");
+
+const ctxTop = rulerTop.getContext("2d");
+const ctxLeft = rulerLeft.getContext("2d");
+
+function resizeRulers(){
+  rulerTop.width = stage.width();
+  rulerTop.height = 30;
+
+  rulerLeft.width = 30;
+  rulerLeft.height = stage.height();
+}
+
+function drawRulers(){
+
+  ctxTop.clearRect(0,0,rulerTop.width,rulerTop.height);
+  ctxLeft.clearRect(0,0,rulerLeft.width,rulerLeft.height);
+
+  ctxTop.fillStyle = "#2b2b2b";
+  ctxTop.fillRect(0,0,rulerTop.width,rulerTop.height);
+
+  ctxLeft.fillStyle = "#2b2b2b";
+  ctxLeft.fillRect(0,0,rulerLeft.width,rulerLeft.height);
+
+  ctxTop.strokeStyle = "#aaa";
+  ctxLeft.strokeStyle = "#aaa";
+
+  ctxTop.fillStyle = "#fff";
+  ctxLeft.fillStyle = "#fff";
+
+  ctxTop.font = "10px Arial";
+  ctxLeft.font = "10px Arial";
+
+  for(let i=0; i<rulerTop.width/SCALE; i++){
+    const x = i * SCALE;
+    let tickHeight = 5;
+
+    if(i % 10 === 0) tickHeight = 15;
+    else if(i % 5 === 0) tickHeight = 10;
+
+    ctxTop.beginPath();
+    ctxTop.moveTo(x,30);
+    ctxTop.lineTo(x,30-tickHeight);
+    ctxTop.stroke();
+
+    if(i % 10 === 0){
+      ctxTop.fillText(i, x+2, 10);
+    }
+  }
+
+  for(let i=0; i<rulerLeft.height/SCALE; i++){
+    const y = i * SCALE;
+    let tickWidth = 5;
+
+    if(i % 10 === 0) tickWidth = 15;
+    else if(i % 5 === 0) tickWidth = 10;
+
+    ctxLeft.beginPath();
+    ctxLeft.moveTo(30, y);
+    ctxLeft.lineTo(30-tickWidth, y);
+    ctxLeft.stroke();
+
+    if(i % 10 === 0){
+      ctxLeft.save();
+      ctxLeft.translate(2, y+3);
+      ctxLeft.rotate(-Math.PI/2);
+      ctxLeft.fillText(i, 0, 0);
+      ctxLeft.restore();
+    }
+  }
+}
+
+resizeRulers();
+drawRulers();
 /* ================= RESPONSIVE SCALE ================= */
 
 function getResponsiveScale(){
