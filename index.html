@@ -218,8 +218,8 @@ document.getElementById("upload").addEventListener("change", function(e){
     imgObj.onload = function(){
 
   // ===== อ่าน DPI =====
-  let dpiX = 72;
-  let dpiY = 72;
+  let dpiX = 300;
+  let dpiY = 300;
 
   if(page["XResolution"] && page["YResolution"]){
     dpiX = page["XResolution"][0] / page["XResolution"][1];
