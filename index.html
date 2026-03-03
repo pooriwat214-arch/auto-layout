@@ -9,104 +9,156 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
+:root{
+  --navy:#2f3136;
+  --panel:#3b3d42;
+  --panel-line:#4d5158;
+  --bg:#5a5a5a;
+  --text-light:#f2f4f7;
+}
+*{box-sizing:border-box;}
 body{
   margin:0;
-  font-family:"Segoe UI",Arial;
-  background:#f4f6f9;
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#3f3f3f;
   display:flex;
   flex-direction:column;
   height:100vh;
 }
 .topbar{
-  background:#0b1d3a;
+  background:var(--navy);
   color:white;
-  padding:14px 24px;
+  padding:10px 14px;
   display:flex;
   justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid #222427;
+  z-index:2;
 }
+.brand-title{font-weight:700;letter-spacing:.2px;}
 .status-badge{
   background:#1abc9c;
-  padding:4px 10px;
-  border-radius:20px;
+  padding:3px 11px;
+  border-radius:999px;
   font-size:12px;
+  font-weight:600;
 }
 .main{
   flex:1;
+  min-height:0;
   display:flex;
   overflow:hidden;
 }
 #controls{
-  width:120px;
-  background:#535353;
-  border-right:1px solid #e0e6ed;
-  padding:28px;
+  width:250px;
+  background:linear-gradient(180deg,#41454d 0%, #393d44 100%);
+  color:#fff;
+  border-right:1px solid var(--panel-line);
+  padding:14px;
   overflow-y:auto;
+  box-shadow:inset -1px 0 0 rgba(255,255,255,0.04);
+}
+#controls label{
+  display:block;
+  margin-bottom:6px;
+  color:var(--text-light);
+  font-size:14px;
+  font-weight:600;
 }
 input{
   width:100%;
-  padding:8px;
-  margin-bottom:12px;
+  padding:7px 8px;
+  margin-bottom:10px;
+  border:1px solid #c7ceda;
+  border-radius:6px;
+  font-size:14px;
+}
+input:focus{
+  outline:none;
+  border-color:#6ca0ff;
+  box-shadow:0 0 0 2px rgba(108,160,255,0.25);
+}
+input[type="file"]{
+  padding:6px;
+  color:#f8fafc;
+  background:rgba(255,255,255,0.05);
 }
 button{
   width:100%;
-  padding:10px;
+  padding:9px;
   margin-bottom:8px;
   border:none;
-  border-radius:4px;
+  border-radius:6px;
   cursor:pointer;
+  font-size:16px;
+  transition:filter .15s ease;
 }
-.btn-primary{background:#1f3c88;color:white;}
-.btn-secondary{background:#ecf0f1;}
-  .editor-wrapper{
-  display: grid;
-  grid-template-columns: 30px 1fr;
-  grid-template-rows: 30px 1fr;
-  width: 100vw;
-  height: 100vh;
-}
-
-.ruler-corner{
-  grid-column: 1;
-  grid-row: 1;
-  background: #2b2b2b;
-}
-
-#ruler-top{
-  grid-column: 2;
-  grid-row: 1;
-  background: #2b2b2b;
-}
-
-#ruler-left{
-  grid-column: 1;
-  grid-row: 2;
-  background: #2b2b2b;
-}
-
-#stage-container{
-  grid-column: 2;
-  grid-row: 2;
-}
+button:hover{filter:brightness(1.05);}
+.btn-primary{background:#24469d;color:white;}
+.btn-secondary{background:#e7ebee;color:#1f2937;}
 #workspace{
   flex:1;
-  padding:24px;
+  min-width:0;
   overflow:auto;
+  padding:26px;
   display:flex;
-  justify-content:flex-start;  /* แก้ตรงนี้ */
+  justify-content:center;
   align-items:flex-start;
+  background:#5f5f5f;
 }
-
 .canvas-wrapper{
-  background:white;
-  padding:20px;
-  border-radius:6px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  background:#f4f4f4;
+  padding:10px;
+  border-radius:2px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.28);
   display:inline-block;
-  min-width:800px;   /* เพิ่มบรรทัดนี้ */
 }
+.editor-wrapper{
+  display:grid;
+  grid-template-columns:30px 1fr;
+  grid-template-rows:30px 1fr;
+}
+.ruler-corner{grid-column:1;grid-row:1;background:#303030;}
+#ruler-top{grid-column:2;grid-row:1;background:#303030;display:block;}
+#ruler-left{grid-column:1;grid-row:2;background:#303030;display:block;}
+#container{grid-column:2;grid-row:2;}
+.file-details{
+  margin:4px 0 10px;
+  padding:8px;
+  border:1px solid rgba(255,255,255,0.16);
+  border-radius:6px;
+  background:rgba(0,0,0,0.15);
+  color:#f3f4f6;
+  max-height:170px;
+  overflow:auto;
+  font-size:11px;
+}
+.file-item{
+  padding:6px 0;
+  border-bottom:1px dashed rgba(255,255,255,0.18);
+}
+.file-item:last-child{border-bottom:none;}
+.file-name{
+  font-weight:600;
+  color:#ffffff;
+  margin-bottom:2px;
+  word-break:break-word;
+}
+.file-meta{opacity:.88; line-height:1.3;}
+.file-status{
+  display:inline-block;
+  margin-top:3px;
+  padding:1px 6px;
+  border-radius:999px;
+  font-size:10px;
+  background:#1f3c88;
+}
+.file-details.empty{opacity:.8;}
 .footer-info{
   font-size:12px;
-  margin-top:15px;
+  margin-top:12px;
+  color:#e5e7eb;
+  line-height:1.4;
 }
 </style>
 </head>
@@ -114,67 +166,145 @@ button{
 <body>
 
 <div class="topbar">
-  <div><strong>AUTO LAYOUT</strong> – Production System</div>
+  <div class="brand-title">AUTO LAYOUT – Production System</div>
   <div class="status-badge" id="systemStatus">READY</div>
 </div>
 
 <div class="main">
+  <div id="controls">
+    <label>Carpet Width (m)</label>
+    <input type="number" id="width" value="4">
 
-<div id="controls">
+    <label>Carpet Length (m)</label>
+    <input type="number" id="length" value="40">
 
-<label>Carpet Width (m)</label>
-<input type="number" id="width" value="4">
+    <label>Gap (cm)</label>
+    <input type="number" id="gap" value="10">
 
-<label>Carpet Length (m)</label>
-<input type="number" id="length" value="40">
+    <label>Upload Images</label>
+    <input type="file" id="upload" multiple>
+    <div id="fileDetails" class="file-details empty">No files selected</div>
 
-<label>Gap (cm)</label>
-<input type="number" id="gap" value="10">
+    <button class="btn-primary" onclick="autoLayout()">Smart Auto Layout</button>
+    <button class="btn-primary" onclick="exportPDF()">Export Production PDF</button>
+    <button class="btn-secondary" id="gridToggleBtn" onclick="toggleGrid()">Hide Grid</button>
+    <button class="btn-secondary" onclick="initStage()">Reset Project</button>
 
-<label>Upload Images</label>
-<input type="file" id="upload" multiple>
-
-<button class="btn-primary" onclick="autoLayout()">Smart Auto Layout</button>
-<button class="btn-primary" onclick="exportPDF()">Export Production PDF</button>
-<button class="btn-secondary" onclick="initStage()">Reset Project</button>
-
-<div class="footer-info">
-Images: <span id="imageCount">0</span><br>
-Used Area: <span id="usedArea">0%</span><br>
-Carpet Size: <span id="carpetSize">0 x 0 cm</span>
-</div>
-<div id="workspace">
-  <div class="editor-wrapper">
-
-    <div class="ruler-corner"></div>
-    <canvas id="ruler-top"></canvas>
-    <canvas id="ruler-left"></canvas>
-    <div id="container"></div>
-
+    <div class="footer-info">
+      Images: <span id="imageCount">0</span><br>
+      Used Area: <span id="usedArea">0%</span><br>
+      Carpet Size: <span id="carpetSize">0 x 0 cm</span>
+    </div>
   </div>
-</div>
-</div>
 
-<div id="workspace">
-<div class="canvas-wrapper">
-<div id="container"></div>
-</div>
-</div>
-
+  <div id="workspace">
+    <div class="canvas-wrapper">
+      <div class="editor-wrapper">
+        <div class="ruler-corner"></div>
+        <canvas id="ruler-top"></canvas>
+        <canvas id="ruler-left"></canvas>
+        <div id="container"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-let stage, layer;
+let stage, carpetLayer, gridLayer, imageLayer;
 let SCALE = 1;
+let isGridVisible = true;
 
 window.addEventListener("load", initStage);
 window.addEventListener("resize", initStage);
+["width","length","gap"].forEach(id => {
+  document.getElementById(id).addEventListener("change", initStage);
+});
   
 const rulerTop = document.getElementById("ruler-top");
 const rulerLeft = document.getElementById("ruler-left");
-
 const ctxTop = rulerTop.getContext("2d");
 const ctxLeft = rulerLeft.getContext("2d");
+const fileDetailsState = [];
+
+function formatFileSize(bytes){
+  if(bytes < 1024) return `${bytes} B`;
+  if(bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function renderFileDetails(){
+  const el = document.getElementById("fileDetails");
+
+  if(!fileDetailsState.length){
+    el.classList.add("empty");
+    el.innerText = "No files selected";
+    return;
+  }
+
+  el.classList.remove("empty");
+  el.innerHTML = fileDetailsState.map(file => `
+    <div class="file-item">
+      <div class="file-name">${file.name}</div>
+      <div class="file-meta">Type: ${file.type}</div>
+      <div class="file-meta">Size: ${formatFileSize(file.size)}</div>
+      ${file.dimensions ? `<div class="file-meta">Pixel: ${file.dimensions}</div>` : ""}
+      ${file.physical ? `<div class="file-meta">Physical: ${file.physical}</div>` : ""}
+      ${file.dpi ? `<div class="file-meta">DPI: ${file.dpi}</div>` : ""}
+      <div class="file-status">${file.status}</div>
+    </div>
+  `).join("");
+}
+
+function snapToCm(valuePx){
+  return Math.round(valuePx / SCALE) * SCALE;
+}
+
+function updateGridToggleButton(){
+  const btn = document.getElementById("gridToggleBtn");
+  if(btn) btn.innerText = isGridVisible ? "Hide Grid" : "Show Grid";
+}
+
+function renderGridOverlay(){
+  if(!gridLayer || !stage) return;
+
+  gridLayer.destroyChildren();
+
+  if(!isGridVisible){
+    gridLayer.draw();
+    return;
+  }
+
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
+
+  for(let xCm = 1; xCm < widthCm; xCm++){
+    const x = xCm * SCALE;
+    gridLayer.add(new Konva.Line({
+      points: [x, 0, x, stage.height()],
+      stroke: xCm % 10 === 0 ? "rgba(80,80,80,0.45)" : "rgba(80,80,80,0.22)",
+      strokeWidth: xCm % 10 === 0 ? 0.8 : 0.45,
+      listening: false
+    }));
+  }
+
+  for(let yCm = 1; yCm < lengthCm; yCm++){
+    const y = yCm * SCALE;
+    gridLayer.add(new Konva.Line({
+      points: [0, y, stage.width(), y],
+      stroke: yCm % 10 === 0 ? "rgba(80,80,80,0.45)" : "rgba(80,80,80,0.22)",
+      strokeWidth: yCm % 10 === 0 ? 0.8 : 0.45,
+      listening: false
+    }));
+  }
+
+  gridLayer.draw();
+}
+
+function toggleGrid(){
+  isGridVisible = !isGridVisible;
+  updateGridToggleButton();
+  renderGridOverlay();
+}
 
 function initRulers(){
 
@@ -340,8 +470,12 @@ function initStage(){
     height: heightPx
   });
 
-  layer = new Konva.Layer();
-  stage.add(layer);
+  carpetLayer = new Konva.Layer();
+  gridLayer = new Konva.Layer();
+  imageLayer = new Konva.Layer();
+  stage.add(carpetLayer);
+  stage.add(gridLayer);
+  stage.add(imageLayer);
 
   const carpet = new Konva.Rect({
     x: 0,
@@ -353,9 +487,12 @@ function initStage(){
     strokeWidth: 2
   });
 
-  layer.add(carpet);
-  layer.draw();
+  carpetLayer.add(carpet);
+  carpetLayer.draw();
 
+  renderGridOverlay();
+  initRulers();
+  updateGridToggleButton();
   updateAreaUsage();
 }
 
@@ -363,73 +500,121 @@ function initStage(){
 
 document.getElementById("upload").addEventListener("change", function(e){
 
-  Array.from(e.target.files).forEach(file=>{
+  const selectedFiles = Array.from(e.target.files);
+  fileDetailsState.length = 0;
+
+  if(!selectedFiles.length){
+    renderFileDetails();
+    return;
+  }
+
+  selectedFiles.forEach(file=>{
+
+    const detail = {
+      name: file.name,
+      type: file.type || "unknown",
+      size: file.size,
+      status: "Loading..."
+    };
+
+    fileDetailsState.push(detail);
+    renderFileDetails();
 
     const reader = new FileReader();
 
     reader.onload = function(evt){
+      try{
+        const buffer = evt.target.result;
+        const ifds = UTIF.decode(buffer);
+        const page = ifds[0];
 
-      const buffer = evt.target.result;
-      const ifds = UTIF.decode(buffer);
-      const page = ifds[0];
+        UTIF.decodeImage(buffer, page);
 
-      UTIF.decodeImage(buffer, page);
+        const widthPx = page.width;
+        const heightPx = page.height;
+        const rgba = UTIF.toRGBA8(page);
 
-      const widthPx = page.width;
-      const heightPx = page.height;
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = widthPx;
+        tempCanvas.height = heightPx;
 
-      const rgba = UTIF.toRGBA8(page);
+        const ctx = tempCanvas.getContext("2d");
+        const imgData = ctx.createImageData(widthPx, heightPx);
+        imgData.data.set(rgba);
+        ctx.putImageData(imgData, 0, 0);
 
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = widthPx;
-      tempCanvas.height = heightPx;
+        const imgObj = new Image();
 
-      const ctx = tempCanvas.getContext("2d");
-      const imgData = ctx.createImageData(widthPx, heightPx);
-      imgData.data.set(rgba);
-      ctx.putImageData(imgData, 0, 0);
+        imgObj.onload = function(){
+          let dpiX = 300;
+          let dpiY = 300;
 
-      const imgObj = new Image();
+          if(page["XResolution"] && page["YResolution"]){
+            dpiX = page["XResolution"][0] / page["XResolution"][1];
+            dpiY = page["YResolution"][0] / page["YResolution"][1];
+          }
 
-    imgObj.onload = function(){
+          const widthCm = (widthPx / dpiX) * 2.54;
+          const heightCm = (heightPx / dpiY) * 2.54;
 
-  // ===== อ่าน DPI =====
-  let dpiX = 300;
-  let dpiY = 300;
+          detail.dimensions = `${widthPx} x ${heightPx} px`;
+          detail.physical = `${widthCm.toFixed(2)} x ${heightCm.toFixed(2)} cm`;
+          detail.dpi = `${dpiX.toFixed(0)} x ${dpiY.toFixed(0)}`;
+          detail.status = "Ready";
+          renderFileDetails();
 
-  if(page["XResolution"] && page["YResolution"]){
-    dpiX = page["XResolution"][0] / page["XResolution"][1];
-    dpiY = page["YResolution"][0] / page["YResolution"][1];
-  }
+          const displayWidth = widthCm * SCALE;
+          const displayHeight = heightCm * SCALE;
 
-  // ===== แปลง pixel → cm =====
-  const widthCm = (widthPx / dpiX) * 2.54;
-  const heightCm = (heightPx / dpiY) * 2.54;
+          const img = new Konva.Image({
+            image: imgObj,
+            x: 0,
+            y: 0,
+            width: displayWidth,
+            height: displayHeight,
+            draggable: true,
+            dragBoundFunc: function(pos){
+              const snappedX = snapToCm(pos.x);
+              const snappedY = snapToCm(pos.y);
+              const maxX = stage.width() - this.width();
+              const maxY = stage.height() - this.height();
+              return {
+                x: Math.max(0, Math.min(maxX, snappedX)),
+                y: Math.max(0, Math.min(maxY, snappedY))
+              };
+            }
+          });
 
-  // ===== cm → canvas pixel =====
-  const displayWidth = widthCm * SCALE;
-  const displayHeight = heightCm * SCALE;
+          img.realWidthCm = widthCm;
+          img.realHeightCm = heightCm;
 
-  const img = new Konva.Image({
-    image: imgObj,
-    x: 0,
-    y: 0,
-    width: displayWidth,
-    height: displayHeight,
-    draggable: true
-  });
+          img.on("dragend", function(){
+            this.position({
+              x: snapToCm(this.x()),
+              y: snapToCm(this.y())
+            });
+            imageLayer.draw();
+            updateAreaUsage();
+          });
 
-  // เก็บขนาดจริงไว้กับ object
-  img.realWidthCm = widthCm;
-  img.realHeightCm = heightCm;
+          imageLayer.add(img);
+          imageLayer.draw();
 
-  layer.add(img);
-  layer.draw();
+          updateImageCount();
+          updateAreaUsage();
+        };
 
-  updateImageCount();
-  updateAreaUsage();
-};
-      imgObj.src = tempCanvas.toDataURL();
+        imgObj.src = tempCanvas.toDataURL();
+      }catch(error){
+        detail.status = "Failed to parse";
+        renderFileDetails();
+        console.error(error);
+      }
+    };
+
+    reader.onerror = function(){
+      detail.status = "Read error";
+      renderFileDetails();
     };
 
     reader.readAsArrayBuffer(file);
@@ -439,18 +624,18 @@ document.getElementById("upload").addEventListener("change", function(e){
 /* ================= FUNCTIONS ================= */
 
 function updateImageCount(){
-  const images = layer.children.filter(n => n.className === "Image");
+  const images = imageLayer.children.filter(n => n.className === "Image");
   document.getElementById("imageCount").innerText = images.length;
 }
 
 function autoLayout(){
 
   const gapCm = parseFloat(document.getElementById("gap").value);
-  const gapPx = gapCm * SCALE;
+  const gapPx = snapToCm(gapCm * SCALE);
 
   let x = 0, y = 0, rowHeight = 0;
 
-  const images = layer.children
+  const images = imageLayer.children
     .filter(n => n.className === "Image")
     .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
 
@@ -458,17 +643,32 @@ function autoLayout(){
 
     if(x + img.width() > stage.width()){
       x = 0;
-      y += rowHeight + gapPx;
+      y = snapToCm(y + rowHeight + gapPx);
       rowHeight = 0;
     }
 
-    img.position({x,y});
-    x += img.width() + gapPx;
+    img.position({x: snapToCm(x), y: snapToCm(y)});
+    x = snapToCm(x + img.width() + gapPx);
     rowHeight = Math.max(rowHeight, img.height());
   });
 
-  layer.draw();
+  imageLayer.draw();
   updateAreaUsage();
+}
+
+function exportPDF(){
+  if(!stage) return;
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({
+    orientation: stage.width() >= stage.height() ? "landscape" : "portrait",
+    unit: "pt",
+    format: [stage.width(), stage.height()]
+  });
+
+  const imageData = stage.toDataURL({ pixelRatio: 2 });
+  pdf.addImage(imageData, "PNG", 0, 0, stage.width(), stage.height());
+  pdf.save("auto-layout-production.pdf");
 }
 
 function updateAreaUsage(){
@@ -479,7 +679,7 @@ function updateAreaUsage(){
 
   let used = 0;
 
-  layer.children.forEach(n=>{
+  imageLayer.children.forEach(n=>{
     if(n.className === "Image"){
       used += n.realWidthCm * n.realHeightCm;
     }
