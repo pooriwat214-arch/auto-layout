@@ -175,52 +175,50 @@ document.getElementById("upload").addEventListener("change", function(e){
 
     reader.onload = function(evt){
 
-      const buffer = evt.target.result;
+  const buffer = evt.target.result;
 
-      const ifds = UTIF.decode(buffer);
-      UTIF.decodeImages(buffer, ifds);
+  const ifds = UTIF.decode(buffer);
+  const page = ifds[0];
 
-      const page = ifds[0];
+  // ใช้ decodeImage แทน decodeImages
+  UTIF.decodeImage(buffer, page);
 
-      const widthPx = page.width;
-      const heightPx = page.height;
+  const widthPx = page.width;
+  const heightPx = page.height;
 
-      const rgba = UTIF.toRGBA8(page);
+  const rgba = UTIF.toRGBA8(page);
 
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = widthPx;
-      tempCanvas.height = heightPx;
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = widthPx;
+  tempCanvas.height = heightPx;
 
-      const ctx = tempCanvas.getContext("2d");
-      const imgData = ctx.createImageData(widthPx, heightPx);
-      imgData.data.set(rgba);
-      ctx.putImageData(imgData, 0, 0);
+  const ctx = tempCanvas.getContext("2d");
+  const imgData = ctx.createImageData(widthPx, heightPx);
+  imgData.data.set(rgba);
+  ctx.putImageData(imgData, 0, 0);
 
-      const imgObj = new Image();
+  const imgObj = new Image();
 
-      imgObj.onload = function(){
+  imgObj.onload = function(){
 
-        const img = new Konva.Image({
-          image: imgObj,
-          x: 0,
-          y: 0,
-          width: widthPx * 0.1,
-          height: heightPx * 0.1,
-          draggable: true
-        });
+    const img = new Konva.Image({
+      image: imgObj,
+      x: 0,
+      y: 0,
+      width: widthPx * 0.1,
+      height: heightPx * 0.1,
+      draggable: true
+    });
 
-        layer.add(img);
-        layer.draw();
+    layer.add(img);
+    layer.draw();
 
-        updateImageCount();
-        updateAreaUsage();
-      };
+    updateImageCount();
+    updateAreaUsage();
+  };
 
-      imgObj.src = tempCanvas.toDataURL();
-    };
-
-    reader.readAsArrayBuffer(file);
-  });
+  imgObj.src = tempCanvas.toDataURL();
+};
 });
 
 /* ================= FUNCTIONS ================= */
