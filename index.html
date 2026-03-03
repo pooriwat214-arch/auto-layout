@@ -10,17 +10,17 @@
 
 <style>
 :root{
-  --navy:#0b1d3a;
-  --panel:#3f4348;
-  --panel-line:#5b6168;
-  --bg:#eceff4;
+  --navy:#2f3136;
+  --panel:#3b3d42;
+  --panel-line:#4d5158;
+  --bg:#5a5a5a;
   --text-light:#f2f4f7;
 }
 *{box-sizing:border-box;}
 body{
   margin:0;
   font-family:"Segoe UI",Arial,sans-serif;
-  background:var(--bg);
+  background:#3f3f3f;
   display:flex;
   flex-direction:column;
   height:100vh;
@@ -28,16 +28,20 @@ body{
 .topbar{
   background:var(--navy);
   color:white;
-  padding:12px 20px;
+  padding:10px 14px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  box-shadow:0 2px 8px rgba(11,29,58,0.25);
+  border-bottom:1px solid #222427;
   z-index:2;
 }
+.brand-row{display:flex;align-items:center;gap:16px;}
+.brand-title{font-weight:700;letter-spacing:.2px;}
+.menu-strip{display:flex;gap:14px;color:#d7d7d7;font-size:13px;}
+.menu-strip span{cursor:default;}
 .status-badge{
   background:#1abc9c;
-  padding:4px 12px;
+  padding:3px 11px;
   border-radius:999px;
   font-size:12px;
   font-weight:600;
@@ -49,12 +53,20 @@ body{
   overflow:hidden;
 }
 #controls{
-  width:240px;
-  background:linear-gradient(180deg,#474c53 0%, #3f4348 100%);
+  width:250px;
+  background:linear-gradient(180deg,#41454d 0%, #393d44 100%);
   color:#fff;
   border-right:1px solid var(--panel-line);
-  padding:12px;
+  padding:14px;
   overflow-y:auto;
+  box-shadow:inset -1px 0 0 rgba(255,255,255,0.04);
+}
+#controls label{
+  display:block;
+  margin-bottom:6px;
+  color:var(--text-light);
+  font-size:14px;
+  font-weight:600;
 }
 #controls label{
   display:block;
@@ -98,13 +110,17 @@ button:hover{filter:brightness(1.05);}
   flex:1;
   min-width:0;
   overflow:auto;
-  padding:0;
+  padding:26px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  background:#5f5f5f;
 }
 .canvas-wrapper{
-  background:white;
-  padding:0;
-  border-radius:0;
-  box-shadow:none;
+  background:#f4f4f4;
+  padding:10px;
+  border-radius:2px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.28);
   display:inline-block;
 }
 .editor-wrapper{
@@ -112,9 +128,9 @@ button:hover{filter:brightness(1.05);}
   grid-template-columns:30px 1fr;
   grid-template-rows:30px 1fr;
 }
-.ruler-corner{grid-column:1;grid-row:1;background:#2b2b2b;}
-#ruler-top{grid-column:2;grid-row:1;background:#2b2b2b;display:block;}
-#ruler-left{grid-column:1;grid-row:2;background:#2b2b2b;display:block;}
+.ruler-corner{grid-column:1;grid-row:1;background:#303030;}
+#ruler-top{grid-column:2;grid-row:1;background:#303030;display:block;}
+#ruler-left{grid-column:1;grid-row:2;background:#303030;display:block;}
 #container{grid-column:2;grid-row:2;}
 .file-details{
   margin:4px 0 10px;
@@ -160,7 +176,12 @@ button:hover{filter:brightness(1.05);}
 <body>
 
 <div class="topbar">
-  <div><strong>AUTO LAYOUT</strong> – Production System</div>
+  <div class="brand-row">
+    <div class="brand-title">AUTO LAYOUT – Production System</div>
+    <div class="menu-strip">
+      <span>File</span><span>Edit</span><span>Object</span><span>View</span><span>Window</span>
+    </div>
+  </div>
   <div class="status-badge" id="systemStatus">READY</div>
 </div>
 
