@@ -127,15 +127,19 @@ Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 const SCALE = 0.3;
 let stage, layer;
 
+window.onload = function(){
+  initStage();
+};
+
 function initStage(){
 
-  const widthCm = width.value * 100;
-  const lengthCm = length.value * 100;
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
 
   const widthPx = widthCm * SCALE;
   const heightPx = lengthCm * SCALE;
 
-  container.innerHTML="";
+  document.getElementById("container").innerHTML = "";
 
   stage = new Konva.Stage({
     container:'container',
@@ -146,37 +150,6 @@ function initStage(){
   layer = new Konva.Layer();
   stage.add(layer);
 
-  layer.add(new Konva.Rect({
-    x:0,y:0,
-    width:widthPx,
-    height:heightPx,
-    stroke:"black",
-    strokeWidth:2
-  }));
-
-  updateAreaUsage();
-}
-
-function initStage(){
-
-  const widthCm = width.value * 100;
-  const lengthCm = length.value * 100;
-
-  const widthPx = widthCm * SCALE;
-  const heightPx = lengthCm * SCALE;
-
-  container.innerHTML="";
-
-  stage = new Konva.Stage({
-    container:'container',
-    width:widthPx,
-    height:heightPx
-  });
-
-  layer = new Konva.Layer();
-  stage.add(layer);
-
-  // พื้นพรม
   const carpet = new Konva.Rect({
     x:0,
     y:0,
@@ -193,22 +166,72 @@ function initStage(){
   updateAreaUsage();
 }
 
+/* ===============================
+   TIFF UPLOAD (แสดงภาพแน่นอน)
+================================ */
+
+document.getElementById("upload").addEventListener("change", function(e){
+
+  Array.from(e.target.files).forEach(file=>{
+
+    const reader = new FileReader();
+
+    reader.onload = function(evt){
+
+      const buffer = evt.target.result;
+
+      const ifds = UTIF.decode(buffer);
+      UTIF.decodeImages(buffer, ifds);
+
+      const page = ifds[0];
+
+      const widthPx = page.width;
+      const heightPx = page.height;
+
+      const rgba = UTIF.toRGBA8(page);
+
+      const canvasTmp = document.createElement("canvas");
+      canvasTmp.width = widthPx;
+      canvasTmp.height = heightPx;
+
+      const ctx = canvasTmp.getContext("2d");
+      const imgData = ctx.createImageData(widthPx, heightPx);
+      imgData.data.set(rgba);
+      ctx.putImageData(imgData, 0, 0);
+
+      const imgObj = new Image();
+
+      imgObj.onload = function(){
+
+        const img = new Konva.Image({
+          image: imgObj,
+          x: 0,
+          y: 0,
+          width: widthPx * 0.1,
+          height: heightPx * 0.1,
+          draggable: true
+        });
+
         layer.add(img);
         layer.draw();
-        updateAreaUsage();
         updateImageCount();
+        updateAreaUsage();
       };
 
-      imgObj.src = canvas.toDataURL();
+      imgObj.src = canvasTmp.toDataURL();
     };
 
     reader.readAsArrayBuffer(file);
   });
 });
 
+/* ===============================
+   UI FUNCTIONS
+================================ */
+
 function updateImageCount(){
-  imageCount.innerText =
-    layer.children.filter(n=>n.className==="Image").length;
+  const images = layer.children.filter(n=>n.className==="Image");
+  document.getElementById("imageCount").innerText = images.length;
 }
 
 function autoLayout(){
@@ -241,8 +264,8 @@ function autoLayout(){
 
 function updateAreaUsage(){
 
-  const widthCm = width.value*100;
-  const lengthCm = length.value*100;
+  const widthCm = parseFloat(document.getElementById("width").value)*100;
+  const lengthCm = parseFloat(document.getElementById("length").value)*100;
   const carpetArea = widthCm*lengthCm;
 
   let used=0;
@@ -255,18 +278,21 @@ function updateAreaUsage(){
     }
   });
 
-  usedArea.innerText=((used/carpetArea)*100).toFixed(2)+"%";
-  carpetSize.innerText=widthCm+" x "+lengthCm+" cm";
+  document.getElementById("usedArea").innerText =
+    ((used/carpetArea)*100).toFixed(2)+"%";
+
+  document.getElementById("carpetSize").innerText =
+    widthCm+" x "+lengthCm+" cm";
 }
 
 async function exportPDF(){
 
   const { jsPDF } = window.jspdf;
 
-  const widthCm = width.value*100;
-  const lengthCm = length.value*100;
+  const widthCm = parseFloat(document.getElementById("width").value)*100;
+  const lengthCm = parseFloat(document.getElementById("length").value)*100;
 
-  const scaleDown = 10; // 1:10
+  const scaleDown = 10;
 
   const doc=new jsPDF({
     orientation:"portrait",
