@@ -62,7 +62,7 @@ button{
   padding:24px;
   overflow:auto;
   display:flex;
-  justify-content:center;
+  justify-content:flex-start;  /* แก้ตรงนี้ */
   align-items:flex-start;
 }
 
@@ -72,6 +72,7 @@ button{
   border-radius:6px;
   box-shadow:0 4px 12px rgba(0,0,0,0.08);
   display:inline-block;
+  min-width:800px;   /* เพิ่มบรรทัดนี้ */
 }
 .footer-info{
   font-size:12px;
@@ -124,11 +125,15 @@ Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 </div>
 
 <script>
-const SCALE = 0.3;
+const SCALE = getScale();
 let stage, layer;
 
 window.addEventListener("load", initStage);
-
+function getScale(){
+  const maxDisplayWidth = 1000; // px ที่อยากให้แสดงเต็ม
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  return maxDisplayWidth / widthCm;
+}
 function initStage(){
 
   const widthCm = parseFloat(document.getElementById("width").value) * 100;
