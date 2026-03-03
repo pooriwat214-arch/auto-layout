@@ -201,7 +201,8 @@ function updateImageCount(){
 
 function autoLayout(){
 
-  const gap = gapInput = gap.value * SCALE;
+  const gapCm = parseFloat(document.getElementById("gap").value);
+  const gapPx = gapCm * SCALE;
 
   let x=0,y=0,rowHeight=0;
 
@@ -213,12 +214,12 @@ function autoLayout(){
 
     if(x+img.width()>stage.width()){
       x=0;
-      y+=rowHeight+gapInput;
+      y+=rowHeight+gapPx;
       rowHeight=0;
     }
 
     img.position({x,y});
-    x+=img.width()+gapInput;
+    x+=img.width()+gapPx;
     rowHeight=Math.max(rowHeight,img.height());
   });
 
@@ -253,10 +254,12 @@ async function exportPDF(){
   const widthCm = width.value*100;
   const lengthCm = length.value*100;
 
+  const scaleDown = 10; // 1:10
+
   const doc=new jsPDF({
     orientation:"portrait",
     unit:"cm",
-    format:[widthCm,lengthCm]
+    format:[widthCm/scaleDown,lengthCm/scaleDown]
   });
 
   for(let node of layer.children){
@@ -266,14 +269,14 @@ async function exportPDF(){
     doc.addImage(
       node.image().src,
       "JPEG",
-      node.x()/SCALE,
-      node.y()/SCALE,
-      node.width()/SCALE,
-      node.height()/SCALE
+      node.x()/SCALE/scaleDown,
+      node.y()/SCALE/scaleDown,
+      node.width()/SCALE/scaleDown,
+      node.height()/SCALE/scaleDown
     );
   }
 
-  window.open(doc.output("bloburl"));
+  doc.save("Production_Layout.pdf");
 }
 </script>
 </body>
