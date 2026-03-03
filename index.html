@@ -35,10 +35,7 @@ body{
   border-bottom:1px solid #222427;
   z-index:2;
 }
-.brand-row{display:flex;align-items:center;gap:16px;}
 .brand-title{font-weight:700;letter-spacing:.2px;}
-.menu-strip{display:flex;gap:14px;color:#d7d7d7;font-size:13px;}
-.menu-strip span{cursor:default;}
 .status-badge{
   background:#1abc9c;
   padding:3px 11px;
@@ -60,13 +57,6 @@ body{
   padding:14px;
   overflow-y:auto;
   box-shadow:inset -1px 0 0 rgba(255,255,255,0.04);
-}
-#controls label{
-  display:block;
-  margin-bottom:6px;
-  color:var(--text-light);
-  font-size:14px;
-  font-weight:600;
 }
 #controls label{
   display:block;
@@ -176,12 +166,7 @@ button:hover{filter:brightness(1.05);}
 <body>
 
 <div class="topbar">
-  <div class="brand-row">
-    <div class="brand-title">AUTO LAYOUT – Production System</div>
-    <div class="menu-strip">
-      <span>File</span><span>Edit</span><span>Object</span><span>View</span><span>Window</span>
-    </div>
-  </div>
+  <div class="brand-title">AUTO LAYOUT – Production System</div>
   <div class="status-badge" id="systemStatus">READY</div>
 </div>
 
@@ -202,6 +187,7 @@ button:hover{filter:brightness(1.05);}
 
     <button class="btn-primary" onclick="autoLayout()">Smart Auto Layout</button>
     <button class="btn-primary" onclick="exportPDF()">Export Production PDF</button>
+    <button class="btn-secondary" id="gridToggleBtn" onclick="toggleGrid()">Hide Grid</button>
     <button class="btn-secondary" onclick="initStage()">Reset Project</button>
 
     <div class="footer-info">
@@ -224,11 +210,15 @@ button:hover{filter:brightness(1.05);}
 </div>
 
 <script>
-let stage, layer;
+let stage, carpetLayer, gridLayer, imageLayer;
 let SCALE = 1;
+let isGridVisible = true;
 
 window.addEventListener("load", initStage);
 window.addEventListener("resize", initStage);
+["width","length","gap"].forEach(id => {
+  document.getElementById(id).addEventListener("change", initStage);
+});
   
 const rulerTop = document.getElementById("ruler-top");
 const rulerLeft = document.getElementById("ruler-left");
@@ -263,6 +253,57 @@ function renderFileDetails(){
       <div class="file-status">${file.status}</div>
     </div>
   `).join("");
+}
+
+function snapToCm(valuePx){
+  return Math.round(valuePx / SCALE) * SCALE;
+}
+
+function updateGridToggleButton(){
+  const btn = document.getElementById("gridToggleBtn");
+  if(btn) btn.innerText = isGridVisible ? "Hide Grid" : "Show Grid";
+}
+
+function renderGridOverlay(){
+  if(!gridLayer || !stage) return;
+
+  gridLayer.destroyChildren();
+
+  if(!isGridVisible){
+    gridLayer.draw();
+    return;
+  }
+
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
+
+  for(let xCm = 1; xCm < widthCm; xCm++){
+    const x = xCm * SCALE;
+    gridLayer.add(new Konva.Line({
+      points: [x, 0, x, stage.height()],
+      stroke: xCm % 10 === 0 ? "rgba(80,80,80,0.45)" : "rgba(80,80,80,0.22)",
+      strokeWidth: xCm % 10 === 0 ? 0.8 : 0.45,
+      listening: false
+    }));
+  }
+
+  for(let yCm = 1; yCm < lengthCm; yCm++){
+    const y = yCm * SCALE;
+    gridLayer.add(new Konva.Line({
+      points: [0, y, stage.width(), y],
+      stroke: yCm % 10 === 0 ? "rgba(80,80,80,0.45)" : "rgba(80,80,80,0.22)",
+      strokeWidth: yCm % 10 === 0 ? 0.8 : 0.45,
+      listening: false
+    }));
+  }
+
+  gridLayer.draw();
+}
+
+function toggleGrid(){
+  isGridVisible = !isGridVisible;
+  updateGridToggleButton();
+  renderGridOverlay();
 }
 
 function initRulers(){
@@ -429,8 +470,12 @@ function initStage(){
     height: heightPx
   });
 
-  layer = new Konva.Layer();
-  stage.add(layer);
+  carpetLayer = new Konva.Layer();
+  gridLayer = new Konva.Layer();
+  imageLayer = new Konva.Layer();
+  stage.add(carpetLayer);
+  stage.add(gridLayer);
+  stage.add(imageLayer);
 
   const carpet = new Konva.Rect({
     x: 0,
@@ -442,10 +487,12 @@ function initStage(){
     strokeWidth: 2
   });
 
-  layer.add(carpet);
-  layer.draw();
+  carpetLayer.add(carpet);
+  carpetLayer.draw();
 
+  renderGridOverlay();
   initRulers();
+  updateGridToggleButton();
   updateAreaUsage();
 }
 
@@ -525,14 +572,33 @@ document.getElementById("upload").addEventListener("change", function(e){
             y: 0,
             width: displayWidth,
             height: displayHeight,
-            draggable: true
+            draggable: true,
+            dragBoundFunc: function(pos){
+              const snappedX = snapToCm(pos.x);
+              const snappedY = snapToCm(pos.y);
+              const maxX = stage.width() - this.width();
+              const maxY = stage.height() - this.height();
+              return {
+                x: Math.max(0, Math.min(maxX, snappedX)),
+                y: Math.max(0, Math.min(maxY, snappedY))
+              };
+            }
           });
 
           img.realWidthCm = widthCm;
           img.realHeightCm = heightCm;
 
-          layer.add(img);
-          layer.draw();
+          img.on("dragend", function(){
+            this.position({
+              x: snapToCm(this.x()),
+              y: snapToCm(this.y())
+            });
+            imageLayer.draw();
+            updateAreaUsage();
+          });
+
+          imageLayer.add(img);
+          imageLayer.draw();
 
           updateImageCount();
           updateAreaUsage();
@@ -558,18 +624,18 @@ document.getElementById("upload").addEventListener("change", function(e){
 /* ================= FUNCTIONS ================= */
 
 function updateImageCount(){
-  const images = layer.children.filter(n => n.className === "Image");
+  const images = imageLayer.children.filter(n => n.className === "Image");
   document.getElementById("imageCount").innerText = images.length;
 }
 
 function autoLayout(){
 
   const gapCm = parseFloat(document.getElementById("gap").value);
-  const gapPx = gapCm * SCALE;
+  const gapPx = snapToCm(gapCm * SCALE);
 
   let x = 0, y = 0, rowHeight = 0;
 
-  const images = layer.children
+  const images = imageLayer.children
     .filter(n => n.className === "Image")
     .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
 
@@ -577,16 +643,16 @@ function autoLayout(){
 
     if(x + img.width() > stage.width()){
       x = 0;
-      y += rowHeight + gapPx;
+      y = snapToCm(y + rowHeight + gapPx);
       rowHeight = 0;
     }
 
-    img.position({x,y});
-    x += img.width() + gapPx;
+    img.position({x: snapToCm(x), y: snapToCm(y)});
+    x = snapToCm(x + img.width() + gapPx);
     rowHeight = Math.max(rowHeight, img.height());
   });
 
-  layer.draw();
+  imageLayer.draw();
   updateAreaUsage();
 }
 
@@ -613,7 +679,7 @@ function updateAreaUsage(){
 
   let used = 0;
 
-  layer.children.forEach(n=>{
+  imageLayer.children.forEach(n=>{
     if(n.className === "Image"){
       used += n.realWidthCm * n.realHeightCm;
     }
