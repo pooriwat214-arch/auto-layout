@@ -217,15 +217,20 @@ document.getElementById("upload").addEventListener("change", function(e){
 
     imgObj.onload = function(){
 
-  // ====== อ่าน DPI จาก TIFF ======
-  const dpiX = page["XResolution"] ? page["XResolution"][0] / page["XResolution"][1] : 72;
-  const dpiY = page["YResolution"] ? page["YResolution"][0] / page["YResolution"][1] : 72;
+  // ===== อ่าน DPI =====
+  let dpiX = 72;
+  let dpiY = 72;
 
-  // แปลง pixel → inch → cm
+  if(page["XResolution"] && page["YResolution"]){
+    dpiX = page["XResolution"][0] / page["XResolution"][1];
+    dpiY = page["YResolution"][0] / page["YResolution"][1];
+  }
+
+  // ===== แปลง pixel → cm =====
   const widthCm = (widthPx / dpiX) * 2.54;
   const heightCm = (heightPx / dpiY) * 2.54;
 
-  // แปลง cm → canvas pixel
+  // ===== cm → canvas pixel =====
   const displayWidth = widthCm * SCALE;
   const displayHeight = heightCm * SCALE;
 
@@ -238,13 +243,16 @@ document.getElementById("upload").addEventListener("change", function(e){
     draggable: true
   });
 
+  // เก็บขนาดจริงไว้กับ object
+  img.realWidthCm = widthCm;
+  img.realHeightCm = heightCm;
+
   layer.add(img);
   layer.draw();
 
   updateImageCount();
   updateAreaUsage();
 };
-
       imgObj.src = tempCanvas.toDataURL();
     };
 
@@ -297,7 +305,7 @@ function updateAreaUsage(){
 
   layer.children.forEach(n=>{
     if(n.className === "Image"){
-      used += (n.width()/SCALE) * (n.height()/SCALE);
+      used += n.realWidthCm * n.realHeightCm;
     }
   });
 
