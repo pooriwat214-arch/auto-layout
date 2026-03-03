@@ -193,7 +193,8 @@ button:hover{filter:brightness(1.05);}
     <div class="footer-info">
       Images: <span id="imageCount">0</span><br>
       Used Area: <span id="usedArea">0%</span><br>
-      Carpet Size: <span id="carpetSize">0 x 0 cm</span>
+      Carpet Size: <span id="carpetSize">0 x 0 cm</span><br>
+      Zoom: <span id="zoomLevel">100%</span>
     </div>
   </div>
 
@@ -213,6 +214,9 @@ button:hover{filter:brightness(1.05);}
 let stage, carpetLayer, gridLayer, imageLayer;
 let SCALE = 1;
 let isGridVisible = true;
+let VIEW_ZOOM = 1;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 4;
 
 window.addEventListener("load", initStage);
 window.addEventListener("resize", initStage);
@@ -264,6 +268,11 @@ function updateGridToggleButton(){
   if(btn) btn.innerText = isGridVisible ? "Hide Grid" : "Show Grid";
 }
 
+function updateZoomInfo(){
+  const zoomEl = document.getElementById("zoomLevel");
+  if(zoomEl) zoomEl.innerText = `${(VIEW_ZOOM * 100).toFixed(0)}%`;
+}
+
 function renderGridOverlay(){
   if(!gridLayer || !stage) return;
 
@@ -306,76 +315,47 @@ function toggleGrid(){
   renderGridOverlay();
 }
 
+function setupStageInteractions(){
+  stage.on("wheel", function(e){
+    e.evt.preventDefault();
+
+    const oldScale = stage.scaleX();
+    const pointer = stage.getPointerPosition();
+    if(!pointer) return;
+
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale
+    };
+
+    const scaleBy = 1.05;
+    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const nextScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    const newScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextScale));
+
+    stage.scale({ x: newScale, y: newScale });
+    VIEW_ZOOM = newScale;
+
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale
+    };
+
+    stage.position(newPos);
+    stage.batchDraw();
+    drawRulers();
+    updateZoomInfo();
+  });
+}
+
 function initRulers(){
-
-  const rulerTop = document.getElementById("ruler-top");
-  const rulerLeft = document.getElementById("ruler-left");
-
   rulerTop.width = stage.width();
   rulerTop.height = 30;
 
   rulerLeft.width = 30;
   rulerLeft.height = stage.height();
 
-  const ctxTop = rulerTop.getContext("2d");
-  const ctxLeft = rulerLeft.getContext("2d");
-
-  ctxTop.fillStyle = "#2b2b2b";
-  ctxTop.fillRect(0,0,rulerTop.width,30);
-
-  ctxLeft.fillStyle = "#2b2b2b";
-  ctxLeft.fillRect(0,0,30,rulerLeft.height);
-
-  ctxTop.strokeStyle = "#aaa";
-  ctxLeft.strokeStyle = "#aaa";
-
-  ctxTop.fillStyle = "#fff";
-  ctxLeft.fillStyle = "#fff";
-
-  ctxTop.font = "10px Arial";
-  ctxLeft.font = "10px Arial";
-
-  const effectiveScale = SCALE;
-
-  for(let i=0; i<rulerTop.width/effectiveScale; i++){
-
-    const x = i * effectiveScale;
-
-    let tick = 5;
-    if(i % 10 === 0) tick = 15;
-    else if(i % 5 === 0) tick = 10;
-
-    ctxTop.beginPath();
-    ctxTop.moveTo(x,30);
-    ctxTop.lineTo(x,30-tick);
-    ctxTop.stroke();
-
-    if(i % 10 === 0){
-      ctxTop.fillText(i, x+2, 10);
-    }
-  }
-
-  for(let i=0; i<rulerLeft.height/effectiveScale; i++){
-
-    const y = i * effectiveScale;
-
-    let tick = 5;
-    if(i % 10 === 0) tick = 15;
-    else if(i % 5 === 0) tick = 10;
-
-    ctxLeft.beginPath();
-    ctxLeft.moveTo(30,y);
-    ctxLeft.lineTo(30-tick,y);
-    ctxLeft.stroke();
-
-    if(i % 10 === 0){
-      ctxLeft.save();
-      ctxLeft.translate(2,y+3);
-      ctxLeft.rotate(-Math.PI/2);
-      ctxLeft.fillText(i,0,0);
-      ctxLeft.restore();
-    }
-  }
+  drawRulers();
 }
 
 function drawRulers(){
@@ -398,10 +378,17 @@ function drawRulers(){
   ctxTop.font = "10px Arial";
   ctxLeft.font = "10px Arial";
 
-  for(let i=0; i<rulerTop.width/SCALE; i++){
-    const x = i * SCALE;
-    let tickHeight = 5;
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
+  const zoom = stage ? stage.scaleX() : 1;
+  const offsetX = stage ? stage.x() : 0;
+  const offsetY = stage ? stage.y() : 0;
 
+  for(let i=0; i<=widthCm; i++){
+    const x = offsetX + (i * SCALE * zoom);
+    if(x < 0 || x > rulerTop.width) continue;
+
+    let tickHeight = 5;
     if(i % 10 === 0) tickHeight = 15;
     else if(i % 5 === 0) tickHeight = 10;
 
@@ -415,10 +402,11 @@ function drawRulers(){
     }
   }
 
-  for(let i=0; i<rulerLeft.height/SCALE; i++){
-    const y = i * SCALE;
-    let tickWidth = 5;
+  for(let i=0; i<=lengthCm; i++){
+    const y = offsetY + (i * SCALE * zoom);
+    if(y < 0 || y > rulerLeft.height) continue;
 
+    let tickWidth = 5;
     if(i % 10 === 0) tickWidth = 15;
     else if(i % 5 === 0) tickWidth = 10;
 
@@ -470,6 +458,10 @@ function initStage(){
     height: heightPx
   });
 
+  VIEW_ZOOM = 1;
+  stage.scale({ x: 1, y: 1 });
+  stage.position({ x: 0, y: 0 });
+
   carpetLayer = new Konva.Layer();
   gridLayer = new Konva.Layer();
   imageLayer = new Konva.Layer();
@@ -491,8 +483,10 @@ function initStage(){
   carpetLayer.draw();
 
   renderGridOverlay();
+  setupStageInteractions();
   initRulers();
   updateGridToggleButton();
+  updateZoomInfo();
   updateAreaUsage();
 }
 
