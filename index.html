@@ -129,6 +129,21 @@ const SCALE = getScale();
 let stage, layer;
 
 window.addEventListener("load", initStage);
+function getResponsiveScale(){
+
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
+
+  const workspace = document.getElementById("workspace");
+
+  const maxWidth = workspace.clientWidth - 80;   // เผื่อ padding
+  const maxHeight = workspace.clientHeight - 80;
+
+  const scaleX = maxWidth / widthCm;
+  const scaleY = maxHeight / lengthCm;
+
+  return Math.min(scaleX, scaleY);
+}
 function getScale(){
   const maxDisplayWidth = 1000; // px ที่อยากให้แสดงเต็ม
   const widthCm = parseFloat(document.getElementById("width").value) * 100;
@@ -138,6 +153,8 @@ function initStage(){
 
   const widthCm = parseFloat(document.getElementById("width").value) * 100;
   const lengthCm = parseFloat(document.getElementById("length").value) * 100;
+
+  const SCALE = getResponsiveScale();
 
   const widthPx = widthCm * SCALE;
   const heightPx = lengthCm * SCALE;
@@ -150,6 +167,25 @@ function initStage(){
     width: widthPx,
     height: heightPx
   });
+
+  layer = new Konva.Layer();
+  stage.add(layer);
+
+  const carpet = new Konva.Rect({
+    x: 0,
+    y: 0,
+    width: widthPx,
+    height: heightPx,
+    fill: "#ffffff",
+    stroke: "black",
+    strokeWidth: 2
+  });
+
+  layer.add(carpet);
+  layer.draw();
+
+  updateAreaUsage();
+}
 
   layer = new Konva.Layer();
   stage.add(layer);
