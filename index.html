@@ -157,82 +157,41 @@ function initStage(){
   updateAreaUsage();
 }
 
-initStage();
-width.onchange = initStage;
-length.onchange = initStage;
+function initStage(){
 
-upload.addEventListener('change', function(e){
+  const widthCm = width.value * 100;
+  const lengthCm = length.value * 100;
 
-  Array.from(e.target.files).forEach(file=>{
+  const widthPx = widthCm * SCALE;
+  const heightPx = lengthCm * SCALE;
 
-    const reader = new FileReader();
+  container.innerHTML="";
 
-    reader.onload = function(evt){
+  stage = new Konva.Stage({
+    container:'container',
+    width:widthPx,
+    height:heightPx
+  });
 
-      const buffer = evt.target.result;
+  layer = new Konva.Layer();
+  stage.add(layer);
 
-      // Decode TIFF
-      const ifds = UTIF.decode(buffer);
-      UTIF.decodeImages(buffer, ifds);
+  // พื้นพรม
+  const carpet = new Konva.Rect({
+    x:0,
+    y:0,
+    width:widthPx,
+    height:heightPx,
+    fill:"#fdfdfd",
+    stroke:"black",
+    strokeWidth:2
+  });
 
-      const firstPage = ifds[0];
+  layer.add(carpet);
+  layer.draw();
 
-      // ดึง DPI จริง
-      const xRes = firstPage["t282"] ? firstPage["t282"][0] / firstPage["t282"][1] : 72;
-      const yRes = firstPage["t283"] ? firstPage["t283"][0] / firstPage["t283"][1] : 72;
-      const unit = firstPage["t296"] ? firstPage["t296"][0] : 2;
-
-      let dpiX = xRes;
-      let dpiY = yRes;
-
-      // ถ้า unit = 3 คือ centimeter ต้องแปลงเป็น inch
-      if(unit === 3){
-        dpiX = xRes * 2.54;
-        dpiY = yRes * 2.54;
-      }
-
-      const widthPx = firstPage.width;
-      const heightPx = firstPage.height;
-
-      // 🔥 คำนวณขนาดจริง cm
-      const realWidthCm = (widthPx / dpiX) * 2.54;
-      const realHeightCm = (heightPx / dpiY) * 2.54;
-
-      console.log("DPI:", dpiX);
-      console.log("Real size (cm):", realWidthCm, realHeightCm);
-
-      // แปลงเป็น pixel บน canvas
-      const displayWidth = realWidthCm * SCALE;
-      const displayHeight = realHeightCm * SCALE;
-
-      const rgba = UTIF.toRGBA8(firstPage);
-
-      const canvas = document.createElement("canvas");
-      canvas.width = widthPx;
-      canvas.height = heightPx;
-
-      const ctx = canvas.getContext("2d");
-      const imgData = ctx.createImageData(widthPx, heightPx);
-      imgData.data.set(rgba);
-      ctx.putImageData(imgData, 0, 0);
-
-      const imgObj = new Image();
-      imgObj.onload = function(){
-
-        const img = new Konva.Image({
-          image: imgObj,
-          x: 0,
-          y: 0,
-          width: displayWidth,
-          height: displayHeight,
-          draggable: true,
-          dragBoundFunc:function(pos){
-            return{
-              x:Math.max(0,Math.min(pos.x,stage.width()-this.width())),
-              y:Math.max(0,Math.min(pos.y,stage.height()-this.height()))
-            };
-          }
-        });
+  updateAreaUsage();
+}
 
         layer.add(img);
         layer.draw();
