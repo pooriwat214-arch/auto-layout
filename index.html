@@ -215,10 +215,13 @@ document.getElementById("upload").addEventListener("change", function(e){
 
     updateImageCount();
     updateAreaUsage();
-  };
+   };
 
-  imgObj.src = tempCanvas.toDataURL();
-};
+    reader.readAsArrayBuffer(file);
+
+  });
+
+});   // 👈 อันนี้ต้องมี
 
 
 /* ================= FUNCTIONS ================= */
