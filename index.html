@@ -127,9 +127,7 @@ Carpet Size: <span id="carpetSize">0 x 0 cm</span>
 const SCALE = 0.3;
 let stage, layer;
 
-window.onload = function(){
-  initStage();
-};
+window.addEventListener("load", initStage);
 
 function initStage(){
 
@@ -139,25 +137,26 @@ function initStage(){
   const widthPx = widthCm * SCALE;
   const heightPx = lengthCm * SCALE;
 
-  document.getElementById("container").innerHTML = "";
+  const container = document.getElementById("container");
+  container.innerHTML = "";
 
   stage = new Konva.Stage({
-    container:'container',
-    width:widthPx,
-    height:heightPx
+    container: "container",
+    width: widthPx,
+    height: heightPx
   });
 
   layer = new Konva.Layer();
   stage.add(layer);
 
   const carpet = new Konva.Rect({
-    x:0,
-    y:0,
-    width:widthPx,
-    height:heightPx,
-    fill:"#fdfdfd",
-    stroke:"black",
-    strokeWidth:2
+    x: 0,
+    y: 0,
+    width: widthPx,
+    height: heightPx,
+    fill: "#ffffff",
+    stroke: "black",
+    strokeWidth: 2
   });
 
   layer.add(carpet);
@@ -166,9 +165,7 @@ function initStage(){
   updateAreaUsage();
 }
 
-/* ===============================
-   TIFF UPLOAD (แสดงภาพแน่นอน)
-================================ */
+/* ================= UPLOAD TIFF ================= */
 
 document.getElementById("upload").addEventListener("change", function(e){
 
@@ -190,11 +187,11 @@ document.getElementById("upload").addEventListener("change", function(e){
 
       const rgba = UTIF.toRGBA8(page);
 
-      const canvasTmp = document.createElement("canvas");
-      canvasTmp.width = widthPx;
-      canvasTmp.height = heightPx;
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = widthPx;
+      tempCanvas.height = heightPx;
 
-      const ctx = canvasTmp.getContext("2d");
+      const ctx = tempCanvas.getContext("2d");
       const imgData = ctx.createImageData(widthPx, heightPx);
       imgData.data.set(rgba);
       ctx.putImageData(imgData, 0, 0);
@@ -214,23 +211,22 @@ document.getElementById("upload").addEventListener("change", function(e){
 
         layer.add(img);
         layer.draw();
+
         updateImageCount();
         updateAreaUsage();
       };
 
-      imgObj.src = canvasTmp.toDataURL();
+      imgObj.src = tempCanvas.toDataURL();
     };
 
     reader.readAsArrayBuffer(file);
   });
 });
 
-/* ===============================
-   UI FUNCTIONS
-================================ */
+/* ================= FUNCTIONS ================= */
 
 function updateImageCount(){
-  const images = layer.children.filter(n=>n.className==="Image");
+  const images = layer.children.filter(n => n.className === "Image");
   document.getElementById("imageCount").innerText = images.length;
 }
 
@@ -239,23 +235,23 @@ function autoLayout(){
   const gapCm = parseFloat(document.getElementById("gap").value);
   const gapPx = gapCm * SCALE;
 
-  let x=0,y=0,rowHeight=0;
+  let x = 0, y = 0, rowHeight = 0;
 
-  const images=layer.children
-    .filter(n=>n.className==="Image")
+  const images = layer.children
+    .filter(n => n.className === "Image")
     .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
 
-  images.forEach(img=>{
+  images.forEach(img => {
 
-    if(x+img.width()>stage.width()){
-      x=0;
-      y+=rowHeight+gapPx;
-      rowHeight=0;
+    if(x + img.width() > stage.width()){
+      x = 0;
+      y += rowHeight + gapPx;
+      rowHeight = 0;
     }
 
     img.position({x,y});
-    x+=img.width()+gapPx;
-    rowHeight=Math.max(rowHeight,img.height());
+    x += img.width() + gapPx;
+    rowHeight = Math.max(rowHeight, img.height());
   });
 
   layer.draw();
@@ -264,57 +260,23 @@ function autoLayout(){
 
 function updateAreaUsage(){
 
-  const widthCm = parseFloat(document.getElementById("width").value)*100;
-  const lengthCm = parseFloat(document.getElementById("length").value)*100;
-  const carpetArea = widthCm*lengthCm;
+  const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
+  const carpetArea = widthCm * lengthCm;
 
-  let used=0;
+  let used = 0;
 
   layer.children.forEach(n=>{
-    if(n.className==="Image"){
-      const realW = n.width()/SCALE;
-      const realH = n.height()/SCALE;
-      used+=realW*realH;
+    if(n.className === "Image"){
+      used += (n.width()/SCALE) * (n.height()/SCALE);
     }
   });
 
   document.getElementById("usedArea").innerText =
-    ((used/carpetArea)*100).toFixed(2)+"%";
+    ((used/carpetArea)*100).toFixed(2) + "%";
 
   document.getElementById("carpetSize").innerText =
-    widthCm+" x "+lengthCm+" cm";
-}
-
-async function exportPDF(){
-
-  const { jsPDF } = window.jspdf;
-
-  const widthCm = parseFloat(document.getElementById("width").value)*100;
-  const lengthCm = parseFloat(document.getElementById("length").value)*100;
-
-  const scaleDown = 10;
-
-  const doc=new jsPDF({
-    orientation:"portrait",
-    unit:"cm",
-    format:[widthCm/scaleDown,lengthCm/scaleDown]
-  });
-
-  for(let node of layer.children){
-
-    if(node.className!=="Image") continue;
-
-    doc.addImage(
-      node.image().src,
-      "JPEG",
-      node.x()/SCALE/scaleDown,
-      node.y()/SCALE/scaleDown,
-      node.width()/SCALE/scaleDown,
-      node.height()/SCALE/scaleDown
-    );
-  }
-
-  doc.save("Production_Layout.pdf");
+    widthCm + " x " + lengthCm + " cm";
 }
 </script>
 </body>
