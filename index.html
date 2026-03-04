@@ -473,6 +473,8 @@ function rotateSelected90(){
 
   const focusNode = targets[targets.length - 1];
   if(focusNode) updateSelectedImageDetails(focusNode);
+    
+    autoLayout();
 }
 
 function updateGridToggleButton(){
@@ -850,63 +852,48 @@ function updateImageCount(){
   document.getElementById("imageCount").innerText = images.length;
 }
 
-function autoLayout(){
-  // ส่ง Event ไปยัง Google Analytics (คงไว้ตามที่ตั้งค่ากันไว้)
-  if (typeof gtag === 'function') {
-    gtag('event', 'use_smart_layout', {
-        'event_category': 'production_tool',
-        'event_label': 'Smart Auto Layout Clicked'
-    });
-  }
-
+function autoLayout() {
   const gapCm = parseFloat(document.getElementById("gap").value) || 0;
-  const gapPx = gapCm * SCALE; // ใช้ SCALE ปัจจุบัน
+  const gapPx = gapCm * SCALE;
 
   let currentX = 0;
   let currentY = 0;
   let maxRowHeight = 0;
 
-  // ดึงภาพทั้งหมดมาจัดเรียง (เรียงจากภาพที่ใหญ่ที่สุดก่อนเพื่อให้จัดวางง่ายขึ้น)
-  const images = imageLayer.children
-    .filter(n => n.className === "Image")
-    .sort((a, b) => (b.width() * b.height()) - (a.width() * a.height()));
+  const images = imageLayer.children.filter(n => n.className === "Image");
 
   images.forEach(img => {
-    const imgWidth = img.width();
-    const imgHeight = img.height();
+    // ใช้ getClientRect เพื่อหาขนาดจริงหลังจาก Rotate หรือ Scale
+    const rect = img.getClientRect();
+    const imgW = rect.width;
+    const imgH = rect.height;
 
-    // เช็คว่าถ้าขยับไปทางขวาแล้วจะเกินความกว้างของ Stage หรือไม่
-    if (currentX + imgWidth > stage.width()) {
-      currentX = 0; // กลับไปเริ่มฝั่งซ้าย
-      currentY += maxRowHeight + gapPx; // ลงมาบรรทัดใหม่
-      maxRowHeight = 0; // รีเซ็ตความสูงแถวใหม่
+    // เช็คว่าถ้าวางต่อในแถวเดิมแล้วล้นขอบขวาหรือไม่
+    if (currentX + imgW > stage.width()) {
+      currentX = 0;
+      currentY += maxRowHeight + gapPx;
+      maxRowHeight = 0;
     }
 
-    // กำหนดตำแหน่งภาพ (Snap ให้ลงตัวเซนติเมตร)
+    // คำนวณตำแหน่ง Offset กรณีภาพมีการหมุน
+    // เนื่องจากตำแหน่ง .x() .y() ของ Konva คือจุดมุมเดิมก่อนหมุน
+    const xOffset = img.x() - rect.x;
+    const yOffset = img.y() - rect.y;
+
     img.position({
-      x: Math.floor(currentX),
-      y: Math.floor(currentY)
+      x: currentX + xOffset,
+      y: currentY + yOffset
     });
 
-    // อัปเดตค่าสำหรับภาพถัดไป
-    currentX += imgWidth + gapPx;
-    maxRowHeight = Math.max(maxRowHeight, imgHeight);
+    // เลื่อนตำแหน่ง X สำหรับภาพถัดไป
+    currentX += imgW + gapPx;
+    // เก็บความสูงที่มากที่สุดในแถวนี้
+    maxRowHeight = Math.max(maxRowHeight, imgH);
   });
-
-  // ตรวจสอบว่าภาพหลุดขอบล่างหรือไม่ (ถ้าหลุดให้ขยายความสูง Stage อัตโนมัติ - Optional)
-  if (currentY + maxRowHeight > stage.height()) {
-     console.warn("Warning: Some images are outside the carpet length.");
-     document.getElementById("systemStatus").innerText = "OVERFLOW - CHECK LENGTH";
-     document.getElementById("systemStatus").style.background = "#e74c3c";
-  } else {
-     document.getElementById("systemStatus").innerText = "READY";
-     document.getElementById("systemStatus").style.background = "#1abc9c";
-  }
 
   imageLayer.draw();
   updateAreaUsage();
 }
-
 // --- เพิ่มการติดตามการ Export PDF ---
 function exportPDF(){
   if(!stage) return;
