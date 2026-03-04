@@ -349,12 +349,23 @@ function snapToCm(valuePx){
   return Math.round(valuePx / SCALE) * SCALE;
 }
 
-function clampPosition(node, x, y){
-  const maxX = stage.width() - node.width();
-  const maxY = stage.height() - node.height();
+function clampPosition(node, x, y) {
+  // หา Bounding Box จริงๆ ของภาพที่หมุนแล้ว
+  const rect = node.getClientRect({ skipShadow: true });
+  
+  // คำนวณหาระยะห่างระหว่างจุด x,y ของ Node กับขอบของ Rect จริงๆ
+  const offsetX = node.x() - rect.x;
+  const offsetY = node.y() - rect.y;
+
+  // กำหนดขอบเขตที่ "เนื้อภาพจริง" จะอยู่ได้
+  const minX = offsetX;
+  const minY = offsetY;
+  const maxX = stage.width() - rect.width + offsetX;
+  const maxY = stage.height() - rect.height + offsetY;
+
   return {
-    x: Math.max(0, Math.min(maxX, x)),
-    y: Math.max(0, Math.min(maxY, y))
+    x: Math.max(minX, Math.min(maxX, x)),
+    y: Math.max(minY, Math.min(maxY, y))
   };
 }
 
@@ -810,8 +821,8 @@ document.getElementById("upload").addEventListener("change", function(e){
             width: displayWidth,
             height: displayHeight,
             draggable: true,
-            dragBoundFunc: function(pos){
-              return clampPosition(this, snapToCm(pos.x), snapToCm(pos.y));
+           dragBoundFunc: function(pos) {
+              return clampPosition(this, pos.x, pos.y);
             }
           });
 
@@ -863,30 +874,23 @@ function autoLayout() {
   const images = imageLayer.children.filter(n => n.className === "Image");
 
   images.forEach(img => {
-    // 1. หาขนาด "กล่องครอบ" ที่แท้จริงของภาพหลังหมุนแล้ว
     const rect = img.getClientRect({ skipShadow: true });
     const imgW = rect.width;
     const imgH = rect.height;
 
-    // 2. เช็คว่าถ้าเลื่อนไปทางขวาแล้วจะล้นความกว้างพรม (stage.width) หรือไม่
     if (currentX + imgW > stage.width()) {
       currentX = 0;
       currentY += maxRowHeight + gapPx;
       maxRowHeight = 0;
     }
 
-    // 3. คำนวณหา "ระยะชดเชย" (Offset) 
-    // เพราะเวลาหมุน ภาพจะเยื้องจากจุด x, y เดิม
     const offsetX = img.x() - rect.x;
     const offsetY = img.y() - rect.y;
 
-    // 4. ตั้งค่าตำแหน่งใหม่ โดยบวกระยะชดเชยเข้าไป
-    img.position({
-      x: currentX + offsetX,
-      y: currentY + offsetY
-    });
+    // ใช้พิกัดที่คำนวณได้ และครอบด้วย clampPosition เพื่อความชัวร์
+    const targetPos = clampPosition(img, currentX + offsetX, currentY + offsetY);
+    img.position(targetPos);
 
-    // 5. เตรียมค่าสำหรับภาพถัดไป
     currentX += imgW + gapPx;
     maxRowHeight = Math.max(maxRowHeight, imgH);
   });
