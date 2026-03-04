@@ -874,12 +874,12 @@ function autoLayout() {
   const images = imageLayer.children.filter(n => n.className === "Image");
 
   images.forEach(img => {
-    // 1. หา "Bounding Box" จริงๆ (ขนาดที่ตาเห็นหลังหมุนภาพแล้ว)
+    // 1. หา "Bounding Box" ที่ตาเห็นจริง (รวมการหมุนแล้ว)
     const rect = img.getClientRect({ skipShadow: true });
     const imgW = rect.width;
     const imgH = rect.height;
 
-    // 2. ถ้าวางต่อในแถวเดิมแล้วล้นขอบขวา ให้ขึ้นบรรทัดใหม่
+    // 2. ถ้าวางต่อแถวเดิมแล้วล้นขอบพรม (stage.width) ให้ขึ้นบรรทัดใหม่
     if (currentX + imgW > stage.width()) {
       currentX = 0;
       currentY += maxRowHeight + gapPx;
@@ -887,17 +887,16 @@ function autoLayout() {
     }
 
     // 3. คำนวณระยะชดเชย (Offset) 
-    // เพื่อดึงภาพที่เหวี่ยงออกไปนอกพิกัด ให้กลับมาอยู่ในจุดที่ต้องการ
+    // เพื่อดึง "เนื้อภาพ" ที่เหวี่ยงออกไป ให้กลับมาตรงกับ currentX, currentY
     const offsetX = img.x() - rect.x;
     const offsetY = img.y() - rect.y;
 
-    // 4. วางตำแหน่งภาพโดยบวกระยะชดเชยเข้าไป
     img.position({
       x: currentX + offsetX,
       y: currentY + offsetY
     });
 
-    // 5. เตรียมค่าสำหรับภาพถัดไป
+    // 4. เตรียมตำแหน่งสำหรับภาพถัดไป
     currentX += imgW + gapPx;
     maxRowHeight = Math.max(maxRowHeight, imgH);
   });
