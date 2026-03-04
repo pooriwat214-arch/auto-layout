@@ -454,38 +454,24 @@ function attachImageInteractions(img){
   });
 }
 
-function rotateSelected90(){
-  if(!imageLayer) return;
+function rotateSelected90() {
+  if (!imageLayer) return;
 
   const targets = selectedImages.size ? Array.from(selectedImages) : [];
-  if(!targets.length) return;
+  if (!targets.length) return;
 
   targets.forEach(node => {
+    // หมุนภาพไป 90 องศา
     node.rotation((node.rotation() + 90) % 360);
-
-    const rect = node.getClientRect({ skipShadow: true });
-    let dx = 0;
-    let dy = 0;
-
-    if(rect.x < 0) dx = -rect.x;
-    if(rect.y < 0) dy = -rect.y;
-
-    if(rect.x + rect.width > stage.width()) dx = stage.width() - (rect.x + rect.width);
-    if(rect.y + rect.height > stage.height()) dy = stage.height() - (rect.y + rect.height);
-
-    node.position({
-      x: snapToCm(node.x() + dx),
-      y: snapToCm(node.y() + dy)
-    });
   });
 
-  imageLayer.draw();
-  updateAreaUsage();
+  // เรียกใช้ Auto Layout เพื่อจัดระเบียบภาพทั้งหมดใหม่ทันทีหลังจากหมุน
+  // ระบบจะคำนวณพิกัดที่ถูกต้องให้เองโดยอัตโนมัติ
+  autoLayout();
 
+  // อัปเดตข้อมูลบนหน้าจอ
   const focusNode = targets[targets.length - 1];
-  if(focusNode) updateSelectedImageDetails(focusNode);
-    
-    autoLayout();
+  if (focusNode) updateSelectedImageDetails(focusNode);
 }
 
 function updateGridToggleButton(){
