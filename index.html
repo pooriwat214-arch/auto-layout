@@ -163,25 +163,20 @@ button:hover{filter:brightness(1.05);}
   font-weight:600;
   background:rgba(255,255,255,0.08);
 }
-.file-details.empty{
-  opacity:1;
-  color:#f9fafb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:40px;
-  font-weight:600;
-  background:rgba(255,255,255,0.08);
+.selected-image-details{
+  margin-top:10px;
+  padding:8px;
+  border:1px solid rgba(255,255,255,0.16);
+  border-radius:6px;
+  background:rgba(0,0,0,0.18);
+  font-size:11px;
+  line-height:1.35;
+  color:#f3f4f6;
 }
-.file-details.empty{
-  opacity:1;
-  color:#f9fafb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:40px;
-  font-weight:600;
-  background:rgba(255,255,255,0.08);
+.selected-image-title{
+  font-weight:700;
+  margin-bottom:4px;
+  color:#ffffff;
 }
 .file-details.empty{opacity:.8;}
 .footer-info{
@@ -220,6 +215,10 @@ button:hover{filter:brightness(1.05);}
     <label>Upload Images</label>
     <input type="file" id="upload" multiple>
     <div id="fileDetails" class="file-details empty">No files selected</div>
+    <div id="selectedImageDetails" class="selected-image-details">
+      <div class="selected-image-title">Selected Image</div>
+      <div>No image selected</div>
+    </div>
 
     <button class="btn-primary" onclick="autoLayout()">Smart Auto Layout</button>
     <button class="btn-primary" onclick="exportPDF()">Export Production PDF</button>
@@ -299,6 +298,29 @@ function renderFileDetails(){
   `).join("");
 }
 
+function clearSelectedImageDetails(){
+  const panel = document.getElementById("selectedImageDetails");
+  panel.innerHTML = `
+    <div class="selected-image-title">Selected Image</div>
+    <div>No image selected</div>
+  `;
+}
+
+function updateSelectedImageDetails(node){
+  const panel = document.getElementById("selectedImageDetails");
+  const file = node.fileDetail || {};
+
+  panel.innerHTML = `
+    <div class="selected-image-title">Selected Image</div>
+    <div><strong>Name:</strong> ${file.name || "-"}</div>
+    <div><strong>Pixel:</strong> ${file.dimensions || "-"}</div>
+    <div><strong>Physical:</strong> ${file.physical || "-"}</div>
+    <div><strong>DPI:</strong> ${file.dpi || "-"}</div>
+    <div><strong>Position:</strong> ${Math.round(node.x()/SCALE)} x ${Math.round(node.y()/SCALE)} cm</div>
+    <div><strong>Display size:</strong> ${(node.width()/SCALE).toFixed(2)} x ${(node.height()/SCALE).toFixed(2)} cm</div>
+  `;
+}
+
 function snapToCm(valuePx){
   return Math.round(valuePx / SCALE) * SCALE;
 }
@@ -338,6 +360,8 @@ function attachImageInteractions(img){
     }
 
     refreshSelectionStyles();
+    if(selectedImages.size === 0) clearSelectedImageDetails();
+    else updateSelectedImageDetails(this);
   });
 
   img.on("dragstart", function(){
@@ -391,6 +415,7 @@ function attachImageInteractions(img){
     dragStartPositions = null;
     imageLayer.draw();
     updateAreaUsage();
+    updateSelectedImageDetails(this);
   });
 }
 
@@ -463,6 +488,7 @@ function setupStageInteractions(){
     if(e.target === stage){
       selectedImages.clear();
       refreshSelectionStyles();
+      clearSelectedImageDetails();
     }
   });
 
@@ -605,6 +631,7 @@ function initStage(){
   selectedImages.clear();
   dragAnchorNode = null;
   dragStartPositions = null;
+  clearSelectedImageDetails();
 
   stage = new Konva.Stage({
     container: "container",
@@ -732,6 +759,7 @@ document.getElementById("upload").addEventListener("change", function(e){
 
           img.realWidthCm = widthCm;
           img.realHeightCm = heightCm;
+          img.fileDetail = detail;
 
           attachImageInteractions(img);
 
