@@ -178,21 +178,6 @@ button:hover{filter:brightness(1.05);}
   margin-bottom:4px;
   color:#ffffff;
 }
-.selected-image-details{
-  margin-top:10px;
-  padding:8px;
-  border:1px solid rgba(255,255,255,0.16);
-  border-radius:6px;
-  background:rgba(0,0,0,0.18);
-  font-size:11px;
-  line-height:1.35;
-  color:#f3f4f6;
-}
-.selected-image-title{
-  font-weight:700;
-  margin-bottom:4px;
-  color:#ffffff;
-}
 .file-details.empty{opacity:.8;}
 .footer-info{
   font-size:12px;
@@ -334,6 +319,7 @@ function updateSelectedImageDetails(node){
     <div><strong>DPI:</strong> ${file.dpi || "-"}</div>
     <div><strong>Position:</strong> ${Math.round(node.x()/SCALE)} x ${Math.round(node.y()/SCALE)} cm</div>
     <div><strong>Display size:</strong> ${(node.width()/SCALE).toFixed(2)} x ${(node.height()/SCALE).toFixed(2)} cm</div>
+    <div><strong>Rotation:</strong> ${Math.round(node.rotation()) % 360}°</div>
   `;
 }
 
@@ -442,19 +428,22 @@ function rotateSelected90(){
   if(!targets.length) return;
 
   targets.forEach(node => {
-    const centerX = node.x() + (node.width() / 2);
-    const centerY = node.y() + (node.height() / 2);
+    node.rotation((node.rotation() + 90) % 360);
 
-    const nextWidth = node.height();
-    const nextHeight = node.width();
+    const rect = node.getClientRect({ skipShadow: true });
+    let dx = 0;
+    let dy = 0;
 
-    node.width(nextWidth);
-    node.height(nextHeight);
+    if(rect.x < 0) dx = -rect.x;
+    if(rect.y < 0) dy = -rect.y;
 
-    const rawX = centerX - (nextWidth / 2);
-    const rawY = centerY - (nextHeight / 2);
-    const clamped = clampPosition(node, snapToCm(rawX), snapToCm(rawY));
-    node.position(clamped);
+    if(rect.x + rect.width > stage.width()) dx = stage.width() - (rect.x + rect.width);
+    if(rect.y + rect.height > stage.height()) dy = stage.height() - (rect.y + rect.height);
+
+    node.position({
+      x: snapToCm(node.x() + dx),
+      y: snapToCm(node.y() + dy)
+    });
   });
 
   imageLayer.draw();
