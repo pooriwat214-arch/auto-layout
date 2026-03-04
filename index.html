@@ -178,6 +178,7 @@ button:hover{filter:brightness(1.05);}
   margin-bottom:4px;
   color:#ffffff;
 }
+.file-details.empty{opacity:.8;}
 .footer-info{
   font-size:12px;
   margin-top:12px;
@@ -605,6 +606,7 @@ function drawRulers(){
 function getResponsiveScale(){
 
   const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
   const workspace = document.getElementById("workspace");
 
   const availableWidth = Math.max(120, workspace.clientWidth - 46);
