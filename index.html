@@ -178,6 +178,21 @@ button:hover{filter:brightness(1.05);}
   margin-bottom:4px;
   color:#ffffff;
 }
+.selected-image-details{
+  margin-top:10px;
+  padding:8px;
+  border:1px solid rgba(255,255,255,0.16);
+  border-radius:6px;
+  background:rgba(0,0,0,0.18);
+  font-size:11px;
+  line-height:1.35;
+  color:#f3f4f6;
+}
+.selected-image-title{
+  font-weight:700;
+  margin-bottom:4px;
+  color:#ffffff;
+}
 .file-details.empty{opacity:.8;}
 .footer-info{
   font-size:12px;
@@ -223,6 +238,7 @@ button:hover{filter:brightness(1.05);}
     <button class="btn-primary" onclick="autoLayout()">Smart Auto Layout</button>
     <button class="btn-primary" onclick="exportPDF()">Export Production PDF</button>
     <button class="btn-secondary" id="gridToggleBtn" onclick="toggleGrid()">Hide Grid</button>
+    <button class="btn-secondary" onclick="rotateSelected90()">Rotate 90°</button>
     <button class="btn-secondary" onclick="initStage()">Reset Project</button>
 
     <div class="footer-info">
@@ -417,6 +433,35 @@ function attachImageInteractions(img){
     updateAreaUsage();
     updateSelectedImageDetails(this);
   });
+}
+
+function rotateSelected90(){
+  if(!imageLayer) return;
+
+  const targets = selectedImages.size ? Array.from(selectedImages) : [];
+  if(!targets.length) return;
+
+  targets.forEach(node => {
+    const centerX = node.x() + (node.width() / 2);
+    const centerY = node.y() + (node.height() / 2);
+
+    const nextWidth = node.height();
+    const nextHeight = node.width();
+
+    node.width(nextWidth);
+    node.height(nextHeight);
+
+    const rawX = centerX - (nextWidth / 2);
+    const rawY = centerY - (nextHeight / 2);
+    const clamped = clampPosition(node, snapToCm(rawX), snapToCm(rawY));
+    node.position(clamped);
+  });
+
+  imageLayer.draw();
+  updateAreaUsage();
+
+  const focusNode = targets[targets.length - 1];
+  if(focusNode) updateSelectedImageDetails(focusNode);
 }
 
 function updateGridToggleButton(){
