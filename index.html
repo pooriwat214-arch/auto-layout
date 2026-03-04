@@ -100,17 +100,17 @@ button:hover{filter:brightness(1.05);}
   flex:1;
   min-width:0;
   overflow:auto;
-  padding:26px;
+  padding:8px;
   display:flex;
-  justify-content:center;
+  justify-content:flex-start;
   align-items:flex-start;
   background:#5f5f5f;
 }
 .canvas-wrapper{
   background:#f4f4f4;
-  padding:10px;
-  border-radius:2px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.28);
+  padding:0;
+  border-radius:0;
+  box-shadow:none;
   display:inline-block;
 }
 .editor-wrapper{
@@ -152,6 +152,16 @@ button:hover{filter:brightness(1.05);}
   border-radius:999px;
   font-size:10px;
   background:#1f3c88;
+}
+.file-details.empty{
+  opacity:1;
+  color:#f9fafb;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  font-weight:600;
+  background:rgba(255,255,255,0.08);
 }
 .file-details.empty{
   opacity:1;
@@ -246,6 +256,9 @@ const rulerLeft = document.getElementById("ruler-left");
 const ctxTop = rulerTop.getContext("2d");
 const ctxLeft = rulerLeft.getContext("2d");
 const fileDetailsState = [];
+const selectedImages = new Set();
+let dragAnchorNode = null;
+let dragStartPositions = null;
 
 function formatFileSize(bytes){
   if(bytes < 1024) return `${bytes} B`;
@@ -278,6 +291,97 @@ function renderFileDetails(){
 
 function snapToCm(valuePx){
   return Math.round(valuePx / SCALE) * SCALE;
+}
+
+function clampPosition(node, x, y){
+  const maxX = stage.width() - node.width();
+  const maxY = stage.height() - node.height();
+  return {
+    x: Math.max(0, Math.min(maxX, x)),
+    y: Math.max(0, Math.min(maxY, y))
+  };
+}
+
+function refreshSelectionStyles(){
+  if(!imageLayer) return;
+  imageLayer.children.forEach(img => {
+    if(img.className !== "Image") return;
+    const active = selectedImages.has(img);
+    img.shadowColor(active ? "#60a5fa" : "transparent");
+    img.shadowBlur(active ? 12 : 0);
+    img.shadowOpacity(active ? 0.95 : 0);
+    img.shadowEnabled(active);
+  });
+  imageLayer.draw();
+}
+
+function attachImageInteractions(img){
+  img.on("click tap", function(e){
+    e.cancelBubble = true;
+
+    if(e.evt && (e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)){
+      if(selectedImages.has(this)) selectedImages.delete(this);
+      else selectedImages.add(this);
+    }else{
+      selectedImages.clear();
+      selectedImages.add(this);
+    }
+
+    refreshSelectionStyles();
+  });
+
+  img.on("dragstart", function(){
+    if(!selectedImages.has(this)){
+      selectedImages.clear();
+      selectedImages.add(this);
+    }
+
+    dragAnchorNode = this;
+    dragStartPositions = new Map();
+    selectedImages.forEach(node => {
+      dragStartPositions.set(node, { x: node.x(), y: node.y() });
+    });
+
+    refreshSelectionStyles();
+  });
+
+  img.on("dragmove", function(){
+    if(dragAnchorNode !== this || !dragStartPositions || selectedImages.size <= 1) return;
+
+    const start = dragStartPositions.get(this);
+    if(!start) return;
+
+    const deltaX = this.x() - start.x;
+    const deltaY = this.y() - start.y;
+
+    selectedImages.forEach(node => {
+      if(node === this) return;
+      const p = dragStartPositions.get(node);
+      if(!p) return;
+
+      const next = clampPosition(node, p.x + deltaX, p.y + deltaY);
+      node.position(next);
+    });
+
+    imageLayer.batchDraw();
+  });
+
+  img.on("dragend", function(){
+    if(selectedImages.has(this)){
+      selectedImages.forEach(node => {
+        const snapped = clampPosition(node, snapToCm(node.x()), snapToCm(node.y()));
+        node.position(snapped);
+      });
+    }else{
+      const snapped = clampPosition(this, snapToCm(this.x()), snapToCm(this.y()));
+      this.position(snapped);
+    }
+
+    dragAnchorNode = null;
+    dragStartPositions = null;
+    imageLayer.draw();
+    updateAreaUsage();
+  });
 }
 
 function updateGridToggleButton(){
@@ -345,6 +449,13 @@ function toggleGrid(){
 }
 
 function setupStageInteractions(){
+  stage.on("click tap", function(e){
+    if(e.target === stage){
+      selectedImages.clear();
+      refreshSelectionStyles();
+    }
+  });
+
   stage.on("wheel", function(e){
     e.evt.preventDefault();
 
@@ -459,11 +570,16 @@ function drawRulers(){
 function getResponsiveScale(){
 
   const widthCm = parseFloat(document.getElementById("width").value) * 100;
+  const lengthCm = parseFloat(document.getElementById("length").value) * 100;
   const workspace = document.getElementById("workspace");
 
-  const maxWidth = workspace.clientWidth - 100;
+  const availableWidth = Math.max(100, workspace.clientWidth - 46);
+  const availableHeight = Math.max(100, workspace.clientHeight - 46);
 
-  return maxWidth / widthCm;
+  const scaleX = availableWidth / widthCm;
+  const scaleY = availableHeight / lengthCm;
+
+  return Math.max(0.1, Math.min(scaleX, scaleY));
 }
 
 /* ================= INIT STAGE ================= */
@@ -480,6 +596,9 @@ function initStage(){
 
   const container = document.getElementById("container");
   container.innerHTML = "";
+  selectedImages.clear();
+  dragAnchorNode = null;
+  dragStartPositions = null;
 
   stage = new Konva.Stage({
     container: "container",
@@ -601,28 +720,14 @@ document.getElementById("upload").addEventListener("change", function(e){
             height: displayHeight,
             draggable: true,
             dragBoundFunc: function(pos){
-              const snappedX = snapToCm(pos.x);
-              const snappedY = snapToCm(pos.y);
-              const maxX = stage.width() - this.width();
-              const maxY = stage.height() - this.height();
-              return {
-                x: Math.max(0, Math.min(maxX, snappedX)),
-                y: Math.max(0, Math.min(maxY, snappedY))
-              };
+              return clampPosition(this, snapToCm(pos.x), snapToCm(pos.y));
             }
           });
 
           img.realWidthCm = widthCm;
           img.realHeightCm = heightCm;
 
-          img.on("dragend", function(){
-            this.position({
-              x: snapToCm(this.x()),
-              y: snapToCm(this.y())
-            });
-            imageLayer.draw();
-            updateAreaUsage();
-          });
+          attachImageInteractions(img);
 
           imageLayer.add(img);
           imageLayer.draw();
