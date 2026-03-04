@@ -173,6 +173,16 @@ button:hover{filter:brightness(1.05);}
   font-weight:600;
   background:rgba(255,255,255,0.08);
 }
+.file-details.empty{
+  opacity:1;
+  color:#f9fafb;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  font-weight:600;
+  background:rgba(255,255,255,0.08);
+}
 .file-details.empty{opacity:.8;}
 .footer-info{
   font-size:12px;
@@ -573,13 +583,9 @@ function getResponsiveScale(){
   const lengthCm = parseFloat(document.getElementById("length").value) * 100;
   const workspace = document.getElementById("workspace");
 
-  const availableWidth = Math.max(100, workspace.clientWidth - 46);
-  const availableHeight = Math.max(100, workspace.clientHeight - 46);
+  const availableWidth = Math.max(120, workspace.clientWidth - 46);
 
-  const scaleX = availableWidth / widthCm;
-  const scaleY = availableHeight / lengthCm;
-
-  return Math.max(0.1, Math.min(scaleX, scaleY));
+  return Math.max(0.1, availableWidth / widthCm);
 }
 
 /* ================= INIT STAGE ================= */
