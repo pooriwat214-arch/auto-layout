@@ -574,14 +574,69 @@ function setupStageInteractions(){
   });
 }
 
-function initRulers(){
-  rulerTop.width = stage.width();
-  rulerTop.height = 30;
+function initRulers() {
+  const rulerTop = document.getElementById("ruler-top");
+  const rulerLeft = document.getElementById("ruler-left");
 
-  rulerLeft.width = 30;
-  rulerLeft.height = stage.height();
+  const ctxTop = rulerTop.getContext("2d");
+  const ctxLeft = rulerLeft.getContext("2d");
+
+  function resizeRulers() {
+    rulerTop.width = container.clientWidth;
+    rulerLeft.height = container.clientHeight;
+  }
+
+  function drawRulers() {
+    resizeRulers();
+
+    ctxTop.clearRect(0, 0, rulerTop.width, rulerTop.height);
+    ctxLeft.clearRect(0, 0, rulerLeft.width, rulerLeft.height);
+
+    const scale = stage.scaleX();
+    const pos = stage.position();
+
+    const gridSize = 10 * scale;
+    const offsetX = pos.x % gridSize;
+    const offsetY = pos.y % gridSize;
+
+    ctxTop.fillStyle = "#333";
+    ctxLeft.fillStyle = "#333";
+    ctxTop.font = "10px Arial";
+    ctxLeft.font = "10px Arial";
+
+    // TOP RULER
+    for (let x = offsetX, i = 0; x < rulerTop.width; x += gridSize, i++) {
+      ctxTop.beginPath();
+      ctxTop.moveTo(x, 20);
+      ctxTop.lineTo(x, 30);
+      ctxTop.strokeStyle = "#888";
+      ctxTop.stroke();
+
+      const value = Math.round((x - pos.x) / scale);
+      ctxTop.fillText(value, x + 2, 15);
+    }
+
+    // LEFT RULER
+    for (let y = offsetY, i = 0; y < rulerLeft.height; y += gridSize, i++) {
+      ctxLeft.beginPath();
+      ctxLeft.moveTo(20, y);
+      ctxLeft.lineTo(30, y);
+      ctxLeft.strokeStyle = "#888";
+      ctxLeft.stroke();
+
+      const value = Math.round((y - pos.y) / scale);
+      ctxLeft.save();
+      ctxLeft.translate(0, y);
+      ctxLeft.rotate(-Math.PI / 2);
+      ctxLeft.fillText(value, -15, 15);
+      ctxLeft.restore();
+    }
+  }
 
   drawRulers();
+
+  stage.on("dragmove wheel", drawRulers);
+  window.addEventListener("resize", drawRulers);
 }
 
 function drawRulers(){
