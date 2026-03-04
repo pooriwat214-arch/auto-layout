@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=TAG_ID"></script>
-    <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
-    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'TAG_ID'); // เปลี่ยน TAG_ID เป็น ID จริงของคุณ
+      gtag('config', 'G-XXXXXXXXXX'); 
     </script>
-
+    
+    <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <meta charset="UTF-8">
-    <title>Auto Layout</title>
+    <title>Auto Layout – Production System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -842,7 +843,15 @@ function updateImageCount(){
   document.getElementById("imageCount").innerText = images.length;
 }
 
+// --- แก้ไขฟังก์ชัน autoLayout เดิม ---
 function autoLayout(){
+  // ส่ง Event ไปยัง Google Analytics เมื่อมีการเรียกใช้ฟังก์ชันนี้
+  gtag('event', 'use_smart_layout', {
+      'event_category': 'production_tool',
+      'event_label': 'Smart Auto Layout Clicked',
+      'carpet_width': document.getElementById("width").value,
+      'color_profile': getSelectedProfile()
+  });
 
   const gapCm = parseFloat(document.getElementById("gap").value);
   const gapPx = snapToCm(gapCm * SCALE);
@@ -852,27 +861,15 @@ function autoLayout(){
   const images = imageLayer.children
     .filter(n => n.className === "Image")
     .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
-  // ตัวอย่างการส่ง Event เมื่อมีการกดปุ่มในโปรเจ็กต์ auto-layout
- const layoutBtn = document.querySelector('#generate-btn'); // เปลี่ยน Selector ให้ตรงกับของคุณ
 
-layoutBtn.addEventListener('click', () => {
-    // ส่งข้อมูลไปยังระบบติดตาม
-    gtag('event', 'generate_layout_click', {
-        'event_category': 'interaction',
-        'event_label': 'Auto Layout Button'
-    });
-    
-    console.log('Tracking sent!');
-});
+  // ลบส่วนที่เคยเป็น layoutBtn.addEventListener ออกไป เพราะเราส่ง gtag ข้างบนแล้ว
 
   images.forEach(img => {
-
     if(x + img.width() > stage.width()){
       x = 0;
       y = snapToCm(y + rowHeight + gapPx);
       rowHeight = 0;
     }
-
     img.position({x: snapToCm(x), y: snapToCm(y)});
     x = snapToCm(x + img.width() + gapPx);
     rowHeight = Math.max(rowHeight, img.height());
@@ -880,6 +877,20 @@ layoutBtn.addEventListener('click', () => {
 
   imageLayer.draw();
   updateAreaUsage();
+}
+
+// --- เพิ่มการติดตามการ Export PDF ---
+function exportPDF(){
+  if(!stage) return;
+  
+  // ส่ง Event เมื่อมีการ Export
+  gtag('event', 'export_pdf', {
+      'event_category': 'conversion',
+      'file_name': `production-${getSelectedProfile()}`
+  });
+
+  const { jsPDF } = window.jspdf;
+  // ... (โค้ด export เดิมของคุณ) ...
 }
 
 function exportPDF(){
