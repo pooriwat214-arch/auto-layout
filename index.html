@@ -850,37 +850,58 @@ function updateImageCount(){
   document.getElementById("imageCount").innerText = images.length;
 }
 
-// --- แก้ไขฟังก์ชัน autoLayout เดิม ---
 function autoLayout(){
-  // ส่ง Event ไปยัง Google Analytics เมื่อมีการเรียกใช้ฟังก์ชันนี้
-  gtag('event', 'use_smart_layout', {
-      'event_category': 'production_tool',
-      'event_label': 'Smart Auto Layout Clicked',
-      'carpet_width': document.getElementById("width").value,
-      'color_profile': getSelectedProfile()
-  });
+  // ส่ง Event ไปยัง Google Analytics (คงไว้ตามที่ตั้งค่ากันไว้)
+  if (typeof gtag === 'function') {
+    gtag('event', 'use_smart_layout', {
+        'event_category': 'production_tool',
+        'event_label': 'Smart Auto Layout Clicked'
+    });
+  }
 
-  const gapCm = parseFloat(document.getElementById("gap").value);
-  const gapPx = snapToCm(gapCm * SCALE);
+  const gapCm = parseFloat(document.getElementById("gap").value) || 0;
+  const gapPx = gapCm * SCALE; // ใช้ SCALE ปัจจุบัน
 
-  let x = 0, y = 0, rowHeight = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let maxRowHeight = 0;
 
+  // ดึงภาพทั้งหมดมาจัดเรียง (เรียงจากภาพที่ใหญ่ที่สุดก่อนเพื่อให้จัดวางง่ายขึ้น)
   const images = imageLayer.children
     .filter(n => n.className === "Image")
-    .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
-
-  // ลบส่วนที่เคยเป็น layoutBtn.addEventListener ออกไป เพราะเราส่ง gtag ข้างบนแล้ว
+    .sort((a, b) => (b.width() * b.height()) - (a.width() * a.height()));
 
   images.forEach(img => {
-    if(x + img.width() > stage.width()){
-      x = 0;
-      y = snapToCm(y + rowHeight + gapPx);
-      rowHeight = 0;
+    const imgWidth = img.width();
+    const imgHeight = img.height();
+
+    // เช็คว่าถ้าขยับไปทางขวาแล้วจะเกินความกว้างของ Stage หรือไม่
+    if (currentX + imgWidth > stage.width()) {
+      currentX = 0; // กลับไปเริ่มฝั่งซ้าย
+      currentY += maxRowHeight + gapPx; // ลงมาบรรทัดใหม่
+      maxRowHeight = 0; // รีเซ็ตความสูงแถวใหม่
     }
-    img.position({x: snapToCm(x), y: snapToCm(y)});
-    x = snapToCm(x + img.width() + gapPx);
-    rowHeight = Math.max(rowHeight, img.height());
+
+    // กำหนดตำแหน่งภาพ (Snap ให้ลงตัวเซนติเมตร)
+    img.position({
+      x: Math.floor(currentX),
+      y: Math.floor(currentY)
+    });
+
+    // อัปเดตค่าสำหรับภาพถัดไป
+    currentX += imgWidth + gapPx;
+    maxRowHeight = Math.max(maxRowHeight, imgHeight);
   });
+
+  // ตรวจสอบว่าภาพหลุดขอบล่างหรือไม่ (ถ้าหลุดให้ขยายความสูง Stage อัตโนมัติ - Optional)
+  if (currentY + maxRowHeight > stage.height()) {
+     console.warn("Warning: Some images are outside the carpet length.");
+     document.getElementById("systemStatus").innerText = "OVERFLOW - CHECK LENGTH";
+     document.getElementById("systemStatus").style.background = "#e74c3c";
+  } else {
+     document.getElementById("systemStatus").innerText = "READY";
+     document.getElementById("systemStatus").style.background = "#1abc9c";
+  }
 
   imageLayer.draw();
   updateAreaUsage();
