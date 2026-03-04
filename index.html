@@ -863,31 +863,31 @@ function autoLayout() {
   const images = imageLayer.children.filter(n => n.className === "Image");
 
   images.forEach(img => {
-    // ใช้ getClientRect เพื่อหาขนาดจริงหลังจาก Rotate หรือ Scale
-    const rect = img.getClientRect();
+    // 1. หาขนาด "กล่องครอบ" ที่แท้จริงของภาพหลังหมุนแล้ว
+    const rect = img.getClientRect({ skipShadow: true });
     const imgW = rect.width;
     const imgH = rect.height;
 
-    // เช็คว่าถ้าวางต่อในแถวเดิมแล้วล้นขอบขวาหรือไม่
+    // 2. เช็คว่าถ้าเลื่อนไปทางขวาแล้วจะล้นความกว้างพรม (stage.width) หรือไม่
     if (currentX + imgW > stage.width()) {
       currentX = 0;
       currentY += maxRowHeight + gapPx;
       maxRowHeight = 0;
     }
 
-    // คำนวณตำแหน่ง Offset กรณีภาพมีการหมุน
-    // เนื่องจากตำแหน่ง .x() .y() ของ Konva คือจุดมุมเดิมก่อนหมุน
-    const xOffset = img.x() - rect.x;
-    const yOffset = img.y() - rect.y;
+    // 3. คำนวณหา "ระยะชดเชย" (Offset) 
+    // เพราะเวลาหมุน ภาพจะเยื้องจากจุด x, y เดิม
+    const offsetX = img.x() - rect.x;
+    const offsetY = img.y() - rect.y;
 
+    // 4. ตั้งค่าตำแหน่งใหม่ โดยบวกระยะชดเชยเข้าไป
     img.position({
-      x: currentX + xOffset,
-      y: currentY + yOffset
+      x: currentX + offsetX,
+      y: currentY + offsetY
     });
 
-    // เลื่อนตำแหน่ง X สำหรับภาพถัดไป
+    // 5. เตรียมค่าสำหรับภาพถัดไป
     currentX += imgW + gapPx;
-    // เก็บความสูงที่มากที่สุดในแถวนี้
     maxRowHeight = Math.max(maxRowHeight, imgH);
   });
 
