@@ -1,12 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>AUTO LAYOUT – Production</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=TAG_ID"></script>
+    <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-<script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
-<script src="https://unpkg.com/konva@9/konva.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      gtag('config', 'TAG_ID'); // เปลี่ยน TAG_ID เป็น ID จริงของคุณ
+    </script>
+
+    <meta charset="UTF-8">
+    <title>Auto Layout</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    </body>
+</html>
+
 
 <style>
 :root{
@@ -838,6 +852,18 @@ function autoLayout(){
   const images = imageLayer.children
     .filter(n => n.className === "Image")
     .sort((a,b)=>(b.width()*b.height())-(a.width()*a.height()));
+  // ตัวอย่างการส่ง Event เมื่อมีการกดปุ่มในโปรเจ็กต์ auto-layout
+ const layoutBtn = document.querySelector('#generate-btn'); // เปลี่ยน Selector ให้ตรงกับของคุณ
+
+layoutBtn.addEventListener('click', () => {
+    // ส่งข้อมูลไปยังระบบติดตาม
+    gtag('event', 'generate_layout_click', {
+        'event_category': 'interaction',
+        'event_label': 'Auto Layout Button'
+    });
+    
+    console.log('Tracking sent!');
+});
 
   images.forEach(img => {
 
